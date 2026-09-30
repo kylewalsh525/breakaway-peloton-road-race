@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+server/data/
+android/.gradle/
+android/local.properties
+android/**/build/
+android/app/src/main/assets/game/
+android/app/src/main/assets/model/
+*.jks
+*.keystore
+*.apk
+__pycache__/
+
+.build-cache/

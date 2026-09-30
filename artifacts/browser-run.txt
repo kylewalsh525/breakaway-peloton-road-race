@@ -1,0 +1,104 @@
+PASS: Desktop garage loads without page errors
+PASS: Four selectable original courses
+PASS: Primary start control is visible inside viewport
+PASS: Selected track coast
+PASS: Selected track canyon
+PASS: Selected track metro
+PASS: Selected track alpine
+PASS: Standalone multiplayer gives actionable server instructions
+PASS: Settings dialog saves and closes
+PASS: Help explicitly distinguishes physical and virtual stopping
+PASS: Browser missing native service is explained
+PASS: Missing sensor does not substitute demo
+PASS: Solo countdown reaches active race
+PASS: Demo telemetry is labeled and reaches the game
+PASS: Keyboard steering changes simulation target
+PASS: Opposite steering returns one lane
+PASS: Boost spends stamina
+PASS: Coast command reaches simulation
+PASS: Resume command restores propulsion
+PASS: Pause opens solo pause dialog
+PASS: Eight riders are rendered in standings
+PASS: Canvas has a real pixel surface
+PASS: Leaving solo returns to garage
+PASS: Viewport 390x844: no horizontal page overflow
+PASS: Viewport 390x844: primary control clickable
+PASS: Mobile settings dialog accessible
+PASS: Viewport 1024x600: no horizontal page overflow
+PASS: Viewport 1024x600: primary control clickable
+PASS: Viewport 1920x1080: no horizontal page overflow
+PASS: Viewport 1920x1080: primary control clickable
+PASS: Native boot chooses real sensors rather than demo
+PASS: Valid native frame enables telemetry
+PASS: Native online speech default is opt-out
+PASS: Native voice started without online consent
+PASS: Low-confidence native command is ignored
+PASS: Native voice steers actual simulation
+PASS: Repeated final native result is de-duplicated
+PASS: Native interim result cannot steer
+PASS: Voice coast reaches simulation
+PASS: Lost native stream becomes stale and zero power
+PASS: Microphone denial is visible and controls remain
+PASS: Complete rendered solo race reaches results
+PASS: Career XP is awarded in results
+PASS: Play again starts a new race
+PASS: No uncaught JavaScript errors
+{
+  "test": "bundled browser UI and synthetic native event integration",
+  "checksPassed": 45,
+  "elapsedSeconds": 26.63,
+  "checks": [
+    "Desktop garage loads without page errors",
+    "Four selectable original courses",
+    "Primary start control is visible inside viewport",
+    "Selected track coast",
+    "Selected track canyon",
+    "Selected track metro",
+    "Selected track alpine",
+    "Standalone multiplayer gives actionable server instructions",
+    "Settings dialog saves and closes",
+    "Help explicitly distinguishes physical and virtual stopping",
+    "Browser missing native service is explained",
+    "Missing sensor does not substitute demo",
+    "Solo countdown reaches active race",
+    "Demo telemetry is labeled and reaches the game",
+    "Keyboard steering changes simulation target",
+    "Opposite steering returns one lane",
+    "Boost spends stamina",
+    "Coast command reaches simulation",
+    "Resume command restores propulsion",
+    "Pause opens solo pause dialog",
+    "Eight riders are rendered in standings",
+    "Canvas has a real pixel surface",
+    "Leaving solo returns to garage",
+    "Viewport 390x844: no horizontal page overflow",
+    "Viewport 390x844: primary control clickable",
+    "Mobile settings dialog accessible",
+    "Viewport 1024x600: no horizontal page overflow",
+    "Viewport 1024x600: primary control clickable",
+    "Viewport 1920x1080: no horizontal page overflow",
+    "Viewport 1920x1080: primary control clickable",
+    "Native boot chooses real sensors rather than demo",
+    "Valid native frame enables telemetry",
+    "Native online speech default is opt-out",
+    "Native voice started without online consent",
+    "Low-confidence native command is ignored",
+    "Native voice steers actual simulation",
+    "Repeated final native result is de-duplicated",
+    "Native interim result cannot steer",
+    "Voice coast reaches simulation",
+    "Lost native stream becomes stale and zero power",
+    "Microphone denial is visible and controls remain",
+    "Complete rendered solo race reaches results",
+    "Career XP is awarded in results",
+    "Play again starts a new race",
+    "No uncaught JavaScript errors"
+  ],
+  "uncaughtErrors": [],
+  "limitations": [
+    "No actual microphone input or physical Peloton was used.",
+    "Native bridge events were synthetic.",
+    "Complete-race test used an accelerated animation clock.",
+    "HTTP/SSE transport is independently integration-tested against the actual Node server."
+  ]
+}

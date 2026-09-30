@@ -1,0 +1,1 @@
+Pure Java mapping: 7 named checks and 24,341 valid combinations passed. No Android APIs were tested.

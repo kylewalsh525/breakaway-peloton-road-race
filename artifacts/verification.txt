@@ -1,0 +1,874 @@
+
+> breakaway-peloton-racer@0.9.0 verify
+> npm run check && npm test && npm run build
+
+
+> breakaway-peloton-racer@0.9.0 check
+> node scripts/check.mjs
+
+Checked syntax of 26 JavaScript modules; no embedded credential patterns.
+
+> breakaway-peloton-racer@0.9.0 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: voice exact alias: left
+ok 1 - voice exact alias: left
+  ---
+  duration_ms: 1.406164
+  type: 'test'
+  ...
+# Subtest: voice exact alias: go left
+ok 2 - voice exact alias: go left
+  ---
+  duration_ms: 0.135631
+  type: 'test'
+  ...
+# Subtest: voice exact alias: move left
+ok 3 - voice exact alias: move left
+  ---
+  duration_ms: 0.22295
+  type: 'test'
+  ...
+# Subtest: voice exact alias: right
+ok 4 - voice exact alias: right
+  ---
+  duration_ms: 0.076153
+  type: 'test'
+  ...
+# Subtest: voice exact alias: go right
+ok 5 - voice exact alias: go right
+  ---
+  duration_ms: 0.068352
+  type: 'test'
+  ...
+# Subtest: voice exact alias: move right
+ok 6 - voice exact alias: move right
+  ---
+  duration_ms: 0.057155
+  type: 'test'
+  ...
+# Subtest: voice exact alias: center
+ok 7 - voice exact alias: center
+  ---
+  duration_ms: 0.099828
+  type: 'test'
+  ...
+# Subtest: voice exact alias: centre
+ok 8 - voice exact alias: centre
+  ---
+  duration_ms: 0.977689
+  type: 'test'
+  ...
+# Subtest: voice exact alias: middle
+ok 9 - voice exact alias: middle
+  ---
+  duration_ms: 0.229089
+  type: 'test'
+  ...
+# Subtest: voice exact alias: hit
+ok 10 - voice exact alias: hit
+  ---
+  duration_ms: 0.295398
+  type: 'test'
+  ...
+# Subtest: voice exact alias: punch
+ok 11 - voice exact alias: punch
+  ---
+  duration_ms: 0.108681
+  type: 'test'
+  ...
+# Subtest: voice exact alias: attack
+ok 12 - voice exact alias: attack
+  ---
+  duration_ms: 0.0471
+  type: 'test'
+  ...
+# Subtest: voice exact alias: kick
+ok 13 - voice exact alias: kick
+  ---
+  duration_ms: 0.032278
+  type: 'test'
+  ...
+# Subtest: voice exact alias: block
+ok 14 - voice exact alias: block
+  ---
+  duration_ms: 0.029053
+  type: 'test'
+  ...
+# Subtest: voice exact alias: shield
+ok 15 - voice exact alias: shield
+  ---
+  duration_ms: 0.032889
+  type: 'test'
+  ...
+# Subtest: voice exact alias: defend
+ok 16 - voice exact alias: defend
+  ---
+  duration_ms: 0.027942
+  type: 'test'
+  ...
+# Subtest: voice exact alias: boost
+ok 17 - voice exact alias: boost
+  ---
+  duration_ms: 0.026559
+  type: 'test'
+  ...
+# Subtest: voice exact alias: turbo
+ok 18 - voice exact alias: turbo
+  ---
+  duration_ms: 0.027751
+  type: 'test'
+  ...
+# Subtest: voice exact alias: sprint
+ok 19 - voice exact alias: sprint
+  ---
+  duration_ms: 0.02702
+  type: 'test'
+  ...
+# Subtest: voice exact alias: brake
+ok 20 - voice exact alias: brake
+  ---
+  duration_ms: 0.0266
+  type: 'test'
+  ...
+# Subtest: voice exact alias: brakes
+ok 21 - voice exact alias: brakes
+  ---
+  duration_ms: 0.027531
+  type: 'test'
+  ...
+# Subtest: voice exact alias: slow
+ok 22 - voice exact alias: slow
+  ---
+  duration_ms: 2.707903
+  type: 'test'
+  ...
+# Subtest: voice exact alias: coast
+ok 23 - voice exact alias: coast
+  ---
+  duration_ms: 0.055853
+  type: 'test'
+  ...
+# Subtest: voice exact alias: stop
+ok 24 - voice exact alias: stop
+  ---
+  duration_ms: 0.036704
+  type: 'test'
+  ...
+# Subtest: voice exact alias: pause
+ok 25 - voice exact alias: pause
+  ---
+  duration_ms: 0.032178
+  type: 'test'
+  ...
+# Subtest: voice exact alias: resume
+ok 26 - voice exact alias: resume
+  ---
+  duration_ms: 0.029985
+  type: 'test'
+  ...
+# Subtest: voice exact alias: ride
+ok 27 - voice exact alias: ride
+  ---
+  duration_ms: 0.028683
+  type: 'test'
+  ...
+# Subtest: voice exact alias: ready
+ok 28 - voice exact alias: ready
+  ---
+  duration_ms: 0.027611
+  type: 'test'
+  ...
+# Subtest: voice exact alias: start
+ok 29 - voice exact alias: start
+  ---
+  duration_ms: 0.076794
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: don't go left
+ok 30 - voice rejects conversation: don't go left
+  ---
+  duration_ms: 0.102993
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: I left my phone
+ok 31 - voice rejects conversation: I left my phone
+  ---
+  duration_ms: 0.044346
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: hit and then boost
+ok 32 - voice rejects conversation: hit and then boost
+  ---
+  duration_ms: 0.03378
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: left right
+ok 33 - voice rejects conversation: left right
+  ---
+  duration_ms: 0.030615
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: please attack this rider
+ok 34 - voice rejects conversation: please attack this rider
+  ---
+  duration_ms: 0.030876
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: nothing
+ok 35 - voice rejects conversation: nothing
+  ---
+  duration_ms: 0.030295
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: 
+ok 36 - voice rejects conversation: 
+  ---
+  duration_ms: 0.066959
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: stop talking
+ok 37 - voice rejects conversation: stop talking
+  ---
+  duration_ms: 0.035012
+  type: 'test'
+  ...
+# Subtest: voice rejects conversation: right now
+ok 38 - voice rejects conversation: right now
+  ---
+  duration_ms: 0.031176
+  type: 'test'
+  ...
+# Subtest: voice punctuation and optional wake word
+ok 39 - voice punctuation and optional wake word
+  ---
+  duration_ms: 0.074811
+  type: 'test'
+  ...
+# Subtest: voice confidence gate uses the actual result confidence
+ok 40 - voice confidence gate uses the actual result confidence
+  ---
+  duration_ms: 0.179476
+  type: 'test'
+  ...
+# Subtest: voice partial results never act
+ok 41 - voice partial results never act
+  ---
+  duration_ms: 0.08139
+  type: 'test'
+  ...
+# Subtest: voice final repetition, per-action cooldown and disable
+ok 42 - voice final repetition, per-action cooldown and disable
+  ---
+  duration_ms: 10.494323
+  type: 'test'
+  ...
+# Subtest: voice malformed and oversized transcripts are rejected
+ok 43 - voice malformed and oversized transcripts are rejected
+  ---
+  duration_ms: 0.134449
+  type: 'test'
+  ...
+# Subtest: voice de-duplication cache stays bounded
+ok 44 - voice de-duplication cache stays bounded
+  ---
+  duration_ms: 18.603471
+  type: 'test'
+  ...
+# Subtest: input is normalized, de-duplicated and strips authority fields
+ok 45 - input is normalized, de-duplicated and strips authority fields
+  ---
+  duration_ms: 0.993091
+  type: 'test'
+  ...
+# Subtest: invalid sequence -1
+ok 46 - invalid sequence -1
+  ---
+  duration_ms: 0.27633
+  type: 'test'
+  ...
+# Subtest: invalid sequence 1.5
+ok 47 - invalid sequence 1.5
+  ---
+  duration_ms: 0.063204
+  type: 'test'
+  ...
+# Subtest: invalid sequence NaN
+ok 48 - invalid sequence NaN
+  ---
+  duration_ms: 0.048151
+  type: 'test'
+  ...
+# Subtest: invalid sequence Infinity
+ok 49 - invalid sequence Infinity
+  ---
+  duration_ms: 0.042974
+  type: 'test'
+  ...
+# Subtest: invalid sequence 1
+ok 50 - invalid sequence 1
+  ---
+  duration_ms: 0.039869
+  type: 'test'
+  ...
+# Subtest: invalid sequence null
+ok 51 - invalid sequence null
+  ---
+  duration_ms: 0.122371
+  type: 'test'
+  ...
+# Subtest: invalid sequence 9007199254740992
+ok 52 - invalid sequence 9007199254740992
+  ---
+  duration_ms: 0.089513
+  type: 'test'
+  ...
+# Subtest: invalid actions null
+ok 53 - invalid actions null
+  ---
+  duration_ms: 0.104004
+  type: 'test'
+  ...
+# Subtest: invalid actions ["teleport"]
+ok 54 - invalid actions ["teleport"]
+  ---
+  duration_ms: 0.052849
+  type: 'test'
+  ...
+# Subtest: invalid actions ["left","left","left","left","left","left","left"]
+ok 55 - invalid actions ["left","left","left","left","left","left","left"]
+  ---
+  duration_ms: 0.213006
+  type: 'test'
+  ...
+# Subtest: invalid actions {}
+ok 56 - invalid actions {}
+  ---
+  duration_ms: 0.061772
+  type: 'test'
+  ...
+# Subtest: invalid actions "left"
+ok 57 - invalid actions "left"
+  ---
+  duration_ms: 0.039308
+  type: 'test'
+  ...
+# Subtest: invalid telemetry watts/-1
+ok 58 - invalid telemetry watts/-1
+  ---
+  duration_ms: 0.106618
+  type: 'test'
+  ...
+# Subtest: invalid telemetry watts/2501
+ok 59 - invalid telemetry watts/2501
+  ---
+  duration_ms: 0.049584
+  type: 'test'
+  ...
+# Subtest: invalid telemetry watts/NaN
+ok 60 - invalid telemetry watts/NaN
+  ---
+  duration_ms: 0.091045
+  type: 'test'
+  ...
+# Subtest: invalid telemetry cadence/241
+ok 61 - invalid telemetry cadence/241
+  ---
+  duration_ms: 0.055562
+  type: 'test'
+  ...
+# Subtest: invalid telemetry resistance/101
+ok 62 - invalid telemetry resistance/101
+  ---
+  duration_ms: 0.043644
+  type: 'test'
+  ...
+# Subtest: invalid telemetry source/root
+ok 63 - invalid telemetry source/root
+  ---
+  duration_ms: 0.039288
+  type: 'test'
+  ...
+# Subtest: invalid telemetry watts/200
+ok 64 - invalid telemetry watts/200
+  ---
+  duration_ms: 0.038557
+  type: 'test'
+  ...
+# Subtest: protocol negotiation never silently accepts a mismatch
+ok 65 - protocol negotiation never silently accepts a mismatch
+  ---
+  duration_ms: 0.263311
+  type: 'test'
+  ...
+# Subtest: names are normalized, bounded and remove markup delimiters
+ok 66 - names are normalized, bounded and remove markup delimiters
+  ---
+  duration_ms: 0.185294
+  type: 'test'
+  ...
+# Subtest: seeded random generator is repeatable and finite
+ok 67 - seeded random generator is repeatable and finite
+  ---
+  duration_ms: 1.501345
+  type: 'test'
+  ...
+# Subtest: ordinal formatting handles teens
+ok 68 - ordinal formatting handles teens
+  ---
+  duration_ms: 0.109542
+  type: 'test'
+  ...
+# Subtest: telemetry ages at sensor arrival, not every read
+ok 69 - telemetry ages at sensor arrival, not every read
+  ---
+  duration_ms: 0.211594
+  type: 'test'
+  ...
+# Subtest: telemetry invalidation permits clean provider restart
+ok 70 - telemetry invalidation permits clean provider restart
+  ---
+  duration_ms: 0.095501
+  type: 'test'
+  ...
+# Subtest: telemetry switching never substitutes demo for a missing bike
+ok 71 - telemetry switching never substitutes demo for a missing bike
+  ---
+  duration_ms: 0.206967
+  type: 'test'
+  ...
+# Subtest: provider arbitration requires a frame, not a successful bind
+ok 72 - provider arbitration requires a frame, not a successful bind
+  ---
+  duration_ms: 0.300966
+  type: 'test'
+  ...
+# Subtest: provider invalid data cannot win arbitration
+ok 73 - provider invalid data cannot win arbitration
+  ---
+  duration_ms: 0.081551
+  type: 'test'
+  ...
+# Subtest: cycling power basic signed packet
+ok 74 - cycling power basic signed packet
+  ---
+  duration_ms: 0.170222
+  type: 'test'
+  ...
+# Subtest: cycling power crank cadence and 16-bit rollover
+ok 75 - cycling power crank cadence and 16-bit rollover
+  ---
+  duration_ms: 0.103834
+  type: 'test'
+  ...
+# Subtest: cycling power optional fields preserve crank offsets
+ok 76 - cycling power optional fields preserve crank offsets
+  ---
+  duration_ms: 0.08777
+  type: 'test'
+  ...
+# Subtest: cycling power unchanged crank eventually becomes zero
+ok 77 - cycling power unchanged crank eventually becomes zero
+  ---
+  duration_ms: 0.069543
+  type: 'test'
+  ...
+# Subtest: cycling power truncated optional fields fail closed
+ok 78 - cycling power truncated optional fields fail closed
+  ---
+  duration_ms: 2.217327
+  type: 'test'
+  ...
+# Subtest: FTMS optional fields, centi-rpm and power
+ok 79 - FTMS optional fields, centi-rpm and power
+  ---
+  duration_ms: 0.242159
+  type: 'test'
+  ...
+# Subtest: FTMS missing or truncated power is never fabricated
+ok 80 - FTMS missing or truncated power is never fabricated
+  ---
+  duration_ms: 0.150633
+  type: 'test'
+  ...
+# Subtest: CSV exports neutralize formulas and escape quotes
+ok 81 - CSV exports neutralize formulas and escape quotes
+  ---
+  duration_ms: 0.161239
+  type: 'test'
+  ...
+# Subtest: rate limiter bounds activity and expires old buckets
+ok 82 - rate limiter bounds activity and expires old buckets
+  ---
+  duration_ms: 0.274087
+  type: 'test'
+  ...
+# Subtest: auth secrets are random and equality handles different lengths
+ok 83 - auth secrets are random and equality handles different lengths
+  ---
+  duration_ms: 0.440032
+  type: 'test'
+  ...
+# Subtest: local career award is idempotent and sources have separate records
+ok 84 - local career award is idempotent and sources have separate records
+  ---
+  duration_ms: 0.448395
+  type: 'test'
+  ...
+# Subtest: local career missing rider is a no-op
+ok 85 - local career missing rider is a no-op
+  ---
+  duration_ms: 0.177723
+  type: 'test'
+  ...
+# Subtest: health and static content expose security headers; server files stay private
+ok 86 - health and static content expose security headers; server files stay private
+  ---
+  duration_ms: 56.669507
+  type: 'test'
+  ...
+# Subtest: bearer authorization is required, query-string tokens are not accepted
+ok 87 - bearer authorization is required, query-string tokens are not accepted
+  ---
+  duration_ms: 32.753703
+  type: 'test'
+  ...
+# Subtest: incompatible protocol, wrong content type, and malformed JSON are rejected
+ok 88 - incompatible protocol, wrong content type, and malformed JSON are rejected
+  ---
+  duration_ms: 7.964053
+  type: 'test'
+  ...
+# Subtest: oversized JSON body and arrays fail closed
+ok 89 - oversized JSON body and arrays fail closed
+  ---
+  duration_ms: 5.461144
+  type: 'test'
+  ...
+# Subtest: cross-origin policy blocks hostile/null origins and permits configured native origin
+ok 90 - cross-origin policy blocks hostile/null origins and permits configured native origin
+  ---
+  duration_ms: 5.956748
+  type: 'test'
+  ...
+# Subtest: invitation passphrase gates session creation
+ok 91 - invitation passphrase gates session creation
+  ---
+  duration_ms: 5.174809
+  type: 'test'
+  ...
+# Subtest: session rate and server capacity limits are enforced
+ok 92 - session rate and server capacity limits are enforced
+  ---
+  duration_ms: 3.908222
+  type: 'test'
+  ...
+# Subtest: new-session abuse has a separate rate limit
+ok 93 - new-session abuse has a separate rate limit
+  ---
+  duration_ms: 3.488831
+  type: 'test'
+  ...
+# Subtest: room creation validates track and honors max room count
+ok 94 - room creation validates track and honors max room count
+  ---
+  duration_ms: 11.262672
+  type: 'test'
+  ...
+# Subtest: private room ready/host permissions, start, input replay, spectator restrictions
+ok 95 - private room ready/host permissions, start, input replay, spectator restrictions
+  ---
+  duration_ms: 34.072964
+  type: 'test'
+  ...
+# Subtest: room capacity is eight riders, with bounded spectator slots
+ok 96 - room capacity is eight riders, with bounded spectator slots
+  ---
+  duration_ms: 24.68087
+  type: 'test'
+  ...
+# Subtest: leaving transfers host and clears an empty room
+ok 97 - leaving transfers host and clears an empty room
+  ---
+  duration_ms: 7.920158
+  type: 'test'
+  ...
+# Subtest: quick matchmaking matches course/mode and fills empty slots with AI on countdown
+ok 98 - quick matchmaking matches course/mode and fills empty slots with AI on countdown
+  ---
+  duration_ms: 5.684446
+  type: 'test'
+  ...
+# Subtest: SSE carries room and race state, reconnect restores one rider, tokens never leak
+ok 99 - SSE carries room and race state, reconnect restores one rider, tokens never leak
+  ---
+  duration_ms: 53.219016
+  type: 'test'
+  ...
+# Subtest: paired phone control is one-time, scoped, sequenced, revocable, and expires
+ok 100 - paired phone control is one-time, scoped, sequenced, revocable, and expires
+  ---
+  duration_ms: 24.075808
+  type: 'test'
+  ...
+# Subtest: race can finish, persist an unverified result, and rematch without duplicate players
+ok 101 - race can finish, persist an unverified result, and rematch without duplicate players
+  ---
+  duration_ms: 127.627839
+  type: 'test'
+  ...
+# Subtest: logout revokes the token and leaves its room
+ok 102 - logout revokes the token and leaves its room
+  ---
+  duration_ms: 4.161798
+  type: 'test'
+  ...
+# Subtest: result journal reload ignores torn final record and excludes demo leaderboard times
+ok 103 - result journal reload ignores torn final record and excludes demo leaderboard times
+  ---
+  duration_ms: 7.936623
+  type: 'test'
+  ...
+# Subtest: interpolation is bounded and rejects reordered old snapshots
+ok 104 - interpolation is bounded and rejects reordered old snapshots
+  ---
+  duration_ms: 0.292434
+  type: 'test'
+  ...
+# Subtest: the actual browser network class connects to the real HTTP/SSE server in Node
+ok 105 - the actual browser network class connects to the real HTTP/SSE server in Node
+  ---
+  duration_ms: 6.158918
+  type: 'test'
+  ...
+# Subtest: page reload resumes the original rider with the next accepted input sequence
+ok 106 - page reload resumes the original rider with the next accepted input sequence
+  ---
+  duration_ms: 12.033305
+  type: 'test'
+  ...
+# Subtest: invalid sensor traffic cannot renew the previous sample on the server
+ok 107 - invalid sensor traffic cannot renew the previous sample on the server
+  ---
+  duration_ms: 5.733057
+  type: 'test'
+  ...
+# Subtest: result journal repairs a torn tail before the next append
+ok 108 - result journal repairs a torn tail before the next append
+  ---
+  duration_ms: 6.471161
+  type: 'test'
+  ...
+# Subtest: result journal compaction preserves ordered bounded history
+ok 109 - result journal compaction preserves ordered bounded history
+  ---
+  duration_ms: 6.763033
+  type: 'test'
+  ...
+# Subtest: grid is bounded and has distinct starting positions
+ok 110 - grid is bounded and has distinct starting positions
+  ---
+  duration_ms: 2.71941
+  type: 'test'
+  ...
+# Subtest: duplicate rider IDs are rejected
+ok 111 - duplicate rider IDs are rejected
+  ---
+  duration_ms: 0.308788
+  type: 'test'
+  ...
+# Subtest: power accelerates; zero power is stationary
+ok 112 - power accelerates; zero power is stationary
+  ---
+  duration_ms: 9.489153
+  type: 'test'
+  ...
+# Subtest: higher watts produce higher long-run speed
+ok 113 - higher watts produce higher long-run speed
+  ---
+  duration_ms: 3.771109
+  type: 'test'
+  ...
+# Subtest: countdown does not accumulate distance
+ok 114 - countdown does not accumulate distance
+  ---
+  duration_ms: 0.545148
+  type: 'test'
+  ...
+# Subtest: stale telemetry removes propulsion and cancels boosts
+ok 115 - stale telemetry removes propulsion and cancels boosts
+  ---
+  duration_ms: 4.785652
+  type: 'test'
+  ...
+# Subtest: client-stale samples are zeroed immediately
+ok 116 - client-stale samples are zeroed immediately
+  ---
+  duration_ms: 0.289269
+  type: 'test'
+  ...
+# Subtest: duplicate and out-of-order packets do not repeat lane changes
+ok 117 - duplicate and out-of-order packets do not repeat lane changes
+  ---
+  duration_ms: 0.274257
+  type: 'test'
+  ...
+# Subtest: malformed client input cannot teleport a rider
+ok 118 - malformed client input cannot teleport a rider
+  ---
+  duration_ms: 0.464418
+  type: 'test'
+  ...
+# Subtest: unknown players and bots reject client input
+ok 119 - unknown players and bots reject client input
+  ---
+  duration_ms: 0.545819
+  type: 'test'
+  ...
+# Subtest: lane steering is clamped and smoothly interpolated
+ok 120 - lane steering is clamped and smoothly interpolated
+  ---
+  duration_ms: 0.657365
+  type: 'test'
+  ...
+# Subtest: coast and resume never change physical resistance
+ok 121 - coast and resume never change physical resistance
+  ---
+  duration_ms: 4.344239
+  type: 'test'
+  ...
+# Subtest: boost requires real-time power and stamina
+ok 122 - boost requires real-time power and stamina
+  ---
+  duration_ms: 0.189991
+  type: 'test'
+  ...
+# Subtest: hit requires range and applies authoritative damage
+ok 123 - hit requires range and applies authoritative damage
+  ---
+  duration_ms: 0.27679
+  type: 'test'
+  ...
+# Subtest: block parries attacks and avoids damage
+ok 124 - block parries attacks and avoids damage
+  ---
+  duration_ms: 0.336759
+  type: 'test'
+  ...
+# Subtest: kick pushes lane and out-of-range attacks miss
+ok 125 - kick pushes lane and out-of-range attacks miss
+  ---
+  duration_ms: 0.236931
+  type: 'test'
+  ...
+# Subtest: chain increases reach and damage
+ok 126 - chain increases reach and damage
+  ---
+  duration_ms: 0.369918
+  type: 'test'
+  ...
+# Subtest: armor break triggers recovery, not elimination
+ok 127 - armor break triggers recovery, not elimination
+  ---
+  duration_ms: 0.185035
+  type: 'test'
+  ...
+# Subtest: pickups are consumed once per rider
+ok 128 - pickups are consumed once per rider
+  ---
+  duration_ms: 0.259154
+  type: 'test'
+  ...
+# Subtest: hazards reduce speed and armor; shield absorbs one
+ok 129 - hazards reduce speed and armor; shield absorbs one
+  ---
+  duration_ms: 0.204273
+  type: 'test'
+  ...
+# Subtest: drafting works behind a rider in the same lane
+ok 130 - drafting works behind a rider in the same lane
+  ---
+  duration_ms: 0.146587
+  type: 'test'
+  ...
+# Subtest: following contact prevents driving through a slower rider
+ok 131 - following contact prevents driving through a slower rider
+  ---
+  duration_ms: 0.222209
+  type: 'test'
+  ...
+# Subtest: finish results are sorted and stable after race end
+ok 132 - finish results are sorted and stable after race end
+  ---
+  duration_ms: 4.343877
+  type: 'test'
+  ...
+# Subtest: race timeout marks unfinished riders DNF
+ok 133 - race timeout marks unfinished riders DNF
+  ---
+  duration_ms: 0.478339
+  type: 'test'
+  ...
+# Subtest: equalized mode uses configured FTP, absolute mode does not
+ok 134 - equalized mode uses configured FTP, absolute mode does not
+  ---
+  duration_ms: 3.359308
+  type: 'test'
+  ...
+# Subtest: snapshots never expose cooldown maps or random generator
+ok 135 - snapshots never expose cooldown maps or random generator
+  ---
+  duration_ms: 2.154222
+  type: 'test'
+  ...
+# Subtest: simulation is deterministic with identical seed and inputs
+ok 136 - simulation is deterministic with identical seed and inputs
+  ---
+  duration_ms: 228.970884
+  type: 'test'
+  ...
+# Subtest: course coast: repeatable content and long-run invariants
+ok 137 - course coast: repeatable content and long-run invariants
+  ---
+  duration_ms: 22.18122
+  type: 'test'
+  ...
+# Subtest: course canyon: repeatable content and long-run invariants
+ok 138 - course canyon: repeatable content and long-run invariants
+  ---
+  duration_ms: 14.875828
+  type: 'test'
+  ...
+# Subtest: course metro: repeatable content and long-run invariants
+ok 139 - course metro: repeatable content and long-run invariants
+  ---
+  duration_ms: 12.655587
+  type: 'test'
+  ...
+# Subtest: course alpine: repeatable content and long-run invariants
+ok 140 - course alpine: repeatable content and long-run invariants
+  ---
+  duration_ms: 13.270739
+  type: 'test'
+  ...
+# Subtest: multiplayer ends after a 45-second grace period when a rival stops
+ok 141 - multiplayer ends after a 45-second grace period when a rival stops
+  ---
+  duration_ms: 10.737594
+  type: 'test'
+  ...
+1..141
+# tests 141
+# suites 0
+# pass 141
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1289.974099
+
+> breakaway-peloton-racer@0.9.0 build
+> node scripts/build.mjs
+
+Built web assets, Android game assets, and dist/PLAY-SOLO.html (152 KiB).

@@ -1,0 +1,8 @@
+BREAKAWAY - Asphalt Arcade
+
+TRY IT NOW: open PLAY-SOLO.html in a desktop browser for solo racing.
+MULTIPLAYER: install Node.js 22+, run npm start here, then open http://localhost:8787.
+
+This ZIP contains implemented game/server source, original graphics, Android integration source, build scripts, deployment files, docs and executed tests.
+
+141 Node tests and 45 browser checks passed. Android APK assembly and physical Peloton/microphone testing were NOT run. No APK or offline speech model binary is included; see README.md and docs/TEST_REPORT.md.

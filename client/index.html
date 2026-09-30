@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101726"><meta name="description" content="An original pedal-powered, voice-controlled arcade racer. Keep your hands on the bars and your eyes on the road.">
+  <title>BREAKAWAY — Asphalt Arcade</title><link rel="icon" type="image/svg+xml" href="/icon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/styles.css">
+  <script src="/legacy.js"></script><script type="module" src="/app.mjs"></script>
+</head>
+<body>
+  <canvas id="world" aria-label="Animated arcade race course"></canvas><div id="home-shade"></div><div class="grain" aria-hidden="true"></div>
+  <div id="boot">Starting BREAKAWAY…<noscript>This game requires JavaScript. Use a current browser or the bundled Android app.</noscript></div>
+  <header id="header">
+    <button class="brand" id="brand-home" aria-label="Return to Breakaway home"><svg viewBox="0 0 44 40" aria-hidden="true"><path d="M18 2H41L26 17H37L9 38L17 22H3Z" fill="currentColor"/></svg><span>BREAKAWAY<small>ASPHALT ARCADE</small></span></button>
+    <div class="nav"><span class="build-tag">PEDAL. SPEAK. RACE.</span><button class="icon-btn" id="sound-btn" aria-label="Toggle sound" title="Toggle sound">♫</button><button class="icon-btn" id="fullscreen-btn" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button><button class="nav-btn" id="help-btn">How to play</button><button class="nav-btn" id="settings-btn">Settings</button></div>
+  </header>
+  <main id="home" class="screen">
+    <section class="hero">
+      <div class="eyebrow"><i class="status-dot"></i> THE NEXT RIDE HITS DIFFERENT</div>
+      <h1>FULL SEND.<br>HANDS <em>ON.</em></h1>
+      <p class="hero-copy">Your legs set the pace.<br>Your voice makes the move.</p>
+      <div class="ride-card">
+        <div class="rider-setup"><label>RIDER NAME<input id="rider-name" maxlength="20" value="Rider" autocomplete="nickname" aria-label="Rider name"></label><label>POWER SOURCE<select id="power-source" aria-label="Power source"><option value="demo">Demo / keyboard</option><option value="peloton">Peloton sensors</option><option value="bluetooth-power">Bluetooth power meter</option><option value="bluetooth-ftms">Bluetooth FTMS bike</option></select></label></div>
+        <div id="source-hint" class="source-hint">Demo power is simulated. It does not read your bike.</div>
+        <div class="ride-actions"><button class="primary" id="practice-btn">RIDE SOLO <span>↗</span></button><button class="secondary" id="quick-btn">QUICK RACE <span>＋</span></button></div>
+        <div class="room-actions"><button id="create-btn" class="text-btn">Create private room</button><span>or</span><form id="join-form"><input id="room-code" maxlength="6" placeholder="ROOM CODE" aria-label="Room code" autocomplete="off"><button class="text-btn" type="submit">Join →</button><button id="watch-btn" class="text-btn" type="button" title="Watch this room without riding">Watch</button></form></div>
+      </div>
+      <div class="home-footnote"><span>01 / PEDAL TO ACCELERATE</span><span>02 / SPEAK TO TAKE CONTROL</span></div>
+    </section>
+    <aside class="hero-badge"><span class="badge-top">YOUR VOICE. YOUR LINE.</span><div>“LEFT.”<br>“BOOST.”<br>“START.”</div><span class="badge-bottom">KEEP BOTH HANDS ON THE BARS.</span></aside>
+    <section class="track-picker"><div class="track-heading"><span>CHOOSE YOUR ESCAPE</span><span id="track-distance">3.2 KM · COASTAL HIGHWAY</span></div><div class="tracks" id="track-list"></div></section>
+  </main>
+  <section id="lobby" class="screen hidden">
+    <div class="panel lobby-panel"><div class="eyebrow">THE STARTING GRID</div><h2 id="lobby-title">Your crew. Your road.</h2><p id="lobby-course" class="muted"></p><div class="room-code-card"><span>ROOM CODE</span><button id="copy-room" title="Copy invitation code"></button><small>Share this code with your riders.</small></div><div id="lobby-riders"></div><div class="row"><button id="ready-btn" class="primary">I’M READY</button><button id="start-btn" class="secondary">START RACE</button></div><p id="lobby-hint" class="muted"></p><div class="row"><button id="voice-lobby" class="text-btn">Enable voice</button><button id="pair-lobby" class="text-btn">Pair phone controller</button><button id="leave-lobby" class="text-btn">Leave room</button></div></div>
+  </section>
+  <section id="hud" class="hidden" aria-label="Race dashboard">
+    <div class="hud-top"><div class="metrics"><div><span>POWER</span><strong id="watts">0</strong><small>W</small></div><div><span>CADENCE</span><strong id="cadence">0</strong><small>RPM</small></div><div><span>SPEED</span><strong id="speed">0</strong><small>KM/H</small></div></div><div class="race-position"><strong id="position">1<span>/8</span></strong><div><span id="race-label">PACIFIC OVERDRIVE</span><b id="race-time">0:00</b></div></div></div>
+    <div class="connection-row"><span id="network-status" class="pill">LOCAL PRACTICE</span><span id="sensor-status" class="pill warning">DEMO POWER</span><span id="fps" class="pill"></span></div>
+    <div class="race-progress"><div id="progress-fill"></div></div>
+    <div id="standings" class="standings"></div>
+    <div class="race-center"><div id="countdown" class="countdown"></div><div id="race-alert" class="race-alert"></div><div id="draft-label" class="draft-label hidden">SLIPSTREAM <span>+ ENERGY</span></div></div>
+    <div class="hud-bottom"><div class="rider-bars"><div><span>STAMINA</span><div class="meter"><i id="energy-fill"></i></div></div><div><span>ARMOR</span><div class="meter armor"><i id="armor-fill"></i></div></div><span id="equipment">BARE KNUCKLES</span></div><div class="voice-console"><button id="voice-btn" class="voice-btn"><span id="mic-led" class="mic-led"></span><span id="voice-label">ENABLE VOICE</span></button><div id="heard">“left” · “right” · “hit” · “block” · “boost”</div></div><button id="pause-btn" class="icon-btn pause-btn" aria-label="Pause or coast">Ⅱ</button></div>
+    <div class="action-bar" id="action-bar"><button data-action="left"><kbd>←</kbd> LEFT</button><button data-action="right"><kbd>→</kbd> RIGHT</button><button data-action="hit"><kbd>SPACE</kbd> HIT</button><button data-action="kick"><kbd>K</kbd> KICK</button><button data-action="block"><kbd>X</kbd> BLOCK</button><button data-action="boost" class="boost-action"><kbd>B</kbd> BOOST</button></div>
+    <div id="demo-control" class="demo-control"><label>DEMO POWER <input id="demo-watts" type="range" min="0" max="600" step="5" value="200"><strong id="demo-value">200 W</strong></label><small>↑ / ↓ adjust · This is not bike telemetry</small></div>
+  </section>
+  <section id="results" class="screen hidden"><div class="panel results-panel"><div class="eyebrow">THAT WAS A RIDE.</div><h2 id="result-title">FINISH LINE.</h2><div id="result-summary" class="result-summary"></div><div id="results-list"></div><div id="career-summary" class="career-summary"></div><div class="row"><button id="again-btn" class="primary">RIDE AGAIN ↗</button><button id="result-home" class="secondary">BACK TO GARAGE</button></div><div class="row"><button id="export-result" class="text-btn">Export ride JSON</button><button id="export-csv" class="text-btn">Export ride CSV</button></div></div></section>
+  <section id="companion" class="screen hidden"><div class="panel companion-panel"><div class="eyebrow">YOUR POCKET PIT CREW</div><h2>VOICE REMOTE.</h2><p class="muted">Pair to your race. Only game commands are sent to the game server, never your microphone audio.</p><form id="pair-form"><label>PAIRING CODE<input id="pair-code" maxlength="10" placeholder="ABCD EFGH" autocomplete="off"></label><button class="primary">CONNECT TO RIDER</button></form><div id="pair-status" role="status"></div><button id="companion-voice" class="secondary">ENABLE MICROPHONE</button><div class="controller-grid" id="controller-grid"></div><button id="companion-home" class="text-btn">Back to game</button></div></section>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="panel modal-panel"><div class="modal-head"><h2 id="modal-title">Settings</h2><button id="close-modal" class="icon-btn" aria-label="Close dialog">×</button></div><div id="modal-content"></div></div></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+</body>
+</html>

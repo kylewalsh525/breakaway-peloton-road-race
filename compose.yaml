@@ -1,0 +1,42 @@
+services:
+  game:
+    build: .
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      DATA_DIR: /data
+      PUBLIC_ORIGIN: https://${RACE_DOMAIN:?Set RACE_DOMAIN in .env}
+      ACCESS_CODE: ${ACCESS_CODE:-}
+      MAX_ROOMS: ${MAX_ROOMS:-32}
+      MAX_SESSIONS: ${MAX_SESSIONS:-256}
+    volumes:
+      - race-data:/data
+    expose:
+      - '8787'
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    mem_limit: 512m
+    stop_grace_period: 15s
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      RACE_DOMAIN: ${RACE_DOMAIN:?Set RACE_DOMAIN in .env}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      game:
+        condition: service_healthy
+volumes:
+  race-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,43 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.breakaway.race'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.breakaway.race'
+        minSdk 26
+        targetSdk 36
+        versionCode 9
+        versionName '0.9.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64' }
+    }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
+        release {
+            minifyEnabled false // Native bridge and Vosk/JNA reflection stay intact.
+            shrinkResources false
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    lint { abortOnError true; disable 'SetJavaScriptEnabled', 'ObsoleteSdkInt', 'LockedOrientationActivity' }
+}
+dependencies {
+    implementation 'net.java.dev.jna:jna:5.18.1@aar'
+    implementation 'com.alphacephei:vosk-android:0.3.75@aar'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}
+tasks.register('verifyGameAssets') {
+    doLast {
+        if (!file('src/main/assets/game/index.html').exists()) throw new GradleException('Run npm run build from the repository root first.')
+    }
+}
+tasks.named('preBuild').configure { dependsOn 'verifyGameAssets' }
+tasks.register('verifyOfflineModel') {
+    doLast {
+        if (!file('src/main/assets/model/am/final.mdl').exists()) throw new GradleException('Release requires the offline model. Run python scripts/prepare_android.py --model-only.')
+    }
+}
+tasks.named('preReleaseBuild').configure { dependsOn 'verifyOfflineModel' }

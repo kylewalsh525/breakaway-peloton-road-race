@@ -1,0 +1,5 @@
+#!/bin/sh
+# Source-only bootstrap: official Gradle distribution, checked SHA-256, offline model.
+# Windows: python scripts/prepare_android.py :app:assembleDebug (from repository root).
+set -eu
+exec python3 "$(dirname "$0")/../scripts/prepare_android.py" "$@"

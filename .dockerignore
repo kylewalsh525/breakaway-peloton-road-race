@@ -1,0 +1,14 @@
+**/.env
+**/node_modules
+.git
+.build-cache
+android
+artifacts
+dist
+docs
+tests
+scripts
+server/data
+*.zip
+*.jks
+*.keystore

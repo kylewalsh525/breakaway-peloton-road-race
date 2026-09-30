@@ -1,0 +1,24 @@
+{
+  "kind": "local HTTP/SSE load test; not a production SLA",
+  "node": "v22.16.0",
+  "rooms": 4,
+  "simultaneousRiders": 32,
+  "elapsedSeconds": 6.186269736,
+  "requests": 1124,
+  "receivedSnapshots": 2840,
+  "receivedBytes": 15517624,
+  "averageDownstreamKBpsPerRider": 76.55021894350438,
+  "requestLatencyMs": {
+    "p50": 11.33783399999993,
+    "p95": 17.542850999999985,
+    "max": 47.52624999999995
+  },
+  "eventLoopDelayMs": {
+    "mean": 10.385676929292929,
+    "p99": 17.727487
+  },
+  "serverDroppedSimulationSteps": 0,
+  "processMemoryMB": 113.5625,
+  "cpuMilliseconds": 1254.537,
+  "errors": []
+}

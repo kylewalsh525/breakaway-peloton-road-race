@@ -1,0 +1,8 @@
+{$RACE_DOMAIN} {
+    encode zstd gzip
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy game:8787 {
+        # Do not buffer the server's real-time event stream.
+        flush_interval -1
+    }
+}
