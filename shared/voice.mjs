@@ -1,7 +1,7 @@
 import { ACTIONS } from './protocol.mjs';
 export const VOICE_ALIASES = Object.freeze({
     left: 'left', 'go left': 'left', 'move left': 'left', right: 'right', 'go right': 'right', 'move right': 'right',
-    center: 'center', centre: 'center', middle: 'center', hit: 'hit', punch: 'hit', attack: 'hit', kick: 'kick',
+    center: 'center', centre: 'center', middle: 'center', hit: 'hit', punch: 'hit', attack: 'hit', chain: 'hit', 'swing chain': 'hit', kick: 'kick',
     block: 'block', shield: 'block', defend: 'block', boost: 'boost', turbo: 'boost', sprint: 'boost',
     brake: 'brake', brakes: 'brake', slow: 'brake', coast: 'coast', stop: 'coast', pause: 'coast',
     resume: 'resume', ride: 'resume', ready: 'ready', start: 'start'
@@ -18,7 +18,7 @@ export function parseVoice(text, { wakeWord = false, confidence = 1, threshold =
     }
     else if (words.startsWith('rider '))
         words = words.slice(6);
-    return VOICE_ALIASES[words] || null;
+    return Object.prototype.hasOwnProperty.call(VOICE_ALIASES, words) ? VOICE_ALIASES[words] : null;
 }
 /** A final result may repeat an interim result: utterance ID is authoritative for de-duplication. */
 export class VoiceGate {
@@ -30,6 +30,7 @@ export class VoiceGate {
         this.last = new Map();
         this.enabled = true;
     }
+    reset() { this.seen.clear(); this.last.clear(); }
     accept({ text, confidence = 1, utteranceId, final = true }, now) {
         if (!this.enabled || !final)
             return null;

@@ -37,10 +37,18 @@ public final class VoiceEngine {
     private SpeechRecognizer platform;
     private int retries;
     private long utterance;
-    private final String[] commands = {"left","right","center","hit","kick","block","boost","brake","coast","resume","ready","start"};
+    private int platformAttempt;
+    private boolean platformLocal;
+    private String clientSession;
+    private String lastPartial = "";
+    // Keep these phrases aligned with shared/voice.mjs; tested by voice-native-contract.test.mjs.
+    private final String[] commands = {"left","go left","move left","right","go right","move right","center","centre","middle","hit","punch","attack","chain","swing chain","kick","block","shield","defend","boost","turbo","sprint","brake","brakes","slow","coast","stop","pause","resume","ride","ready","start"};
     public VoiceEngine(Context context, Consumer<JSONObject> output) { this.context=context;this.output=output; }
     public void start(boolean allowOnline) {
-        stop(); running=true; int id=generation;
+        start(allowOnline,null);
+    }
+    public void start(boolean allowOnline,String sessionId) {
+        stop(); clientSession=sessionId; lastPartial=""; running=true; int id=generation;
         status("starting", "Loading offline speech model…");
         worker.execute(() -> {
             try {
@@ -88,28 +96,61 @@ public final class VoiceEngine {
     private void emitVosk(String raw,boolean finalResult,int id) {
         if(!running||id!=generation)return;
         try {JSONObject result=new JSONObject(raw);String text=result.optString(finalResult?"text":"partial","");if(text.isEmpty())return;
+            if(!finalResult) { if(text.equals(lastPartial))return; lastPartial=text; }
+            else lastPartial="";
             double confidence=1;JSONArray words=result.optJSONArray("result");
             if(words!=null&&words.length()>0){confidence=1;for(int i=0;i<words.length();i++)confidence=Math.min(confidence,words.getJSONObject(i).optDouble("conf",0));}
-            emit(text,confidence,finalResult,"vosk");
+            // Word timestamps identify the audio span, so a repeated final callback
+            // retains its utterance ID instead of being mistaken for a second attack.
+            double from=words!=null&&words.length()>0?words.getJSONObject(0).optDouble("start",-1):-1;
+            double to=words!=null&&words.length()>0?words.getJSONObject(words.length()-1).optDouble("end",-1):-1;
+            String key=finalResult&&from>=0&&to>=from
+                ? "vosk-"+id+"-"+from+"-"+to : "vosk-"+id+"-"+(++utterance);
+            emit(text,confidence,finalResult,key);
         }catch(Exception ignored){ }
     }
     private void startPlatform(int id) {
         if(!SpeechRecognizer.isRecognitionAvailable(context)){running=false;status("unavailable","No platform speech service. Package the offline Vosk model or pair a phone.");return;}
-        boolean local=Build.VERSION.SDK_INT>=31&&SpeechRecognizer.isOnDeviceRecognitionAvailable(context);
-        platform=local?SpeechRecognizer.createOnDeviceSpeechRecognizer(context):SpeechRecognizer.createSpeechRecognizer(context);
-        retries=0;
-        platform.setRecognitionListener(new RecognitionListener(){
-            public void onReadyForSpeech(Bundle p){status("listening",local?"Listening · Android on-device speech":"Listening · platform service may process audio online");}
-            public void onBeginningOfSpeech(){} public void onRmsChanged(float v){} public void onBufferReceived(byte[] b){} public void onEndOfSpeech(){}
-            public void onError(int code){if(!running||id!=generation)return;if(code==SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS){stop();status("denied","Microphone permission denied");return;}retries++;if(retries>8){stop();status("unavailable","Speech service repeatedly failed; pair a phone or use offline Vosk");return;}main.postDelayed(()->listenPlatform(id),Math.min(8000,500L*retries));}
-            public void onResults(Bundle results){if(!running||id!=generation)return;retries=0;ArrayList<String> list=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);float[] confidence=results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);if(list!=null&&!list.isEmpty())emit(list.get(0),confidence!=null&&confidence.length>0&&confidence[0]>=0?confidence[0]:0.6,true,"platform");main.postDelayed(()->listenPlatform(id),150);}
-            public void onPartialResults(Bundle results){} public void onEvent(int code,Bundle b){}
-        });
-        listenPlatform(id);
+        try {
+            platformLocal=Build.VERSION.SDK_INT>=31&&SpeechRecognizer.isOnDeviceRecognitionAvailable(context);
+            platform=platformLocal?SpeechRecognizer.createOnDeviceSpeechRecognizer(context):SpeechRecognizer.createSpeechRecognizer(context);
+            retries=0;
+            listenPlatform(id);
+        } catch(RuntimeException error) { stop();status("unavailable","Platform speech could not initialize; use offline Vosk or pair a phone."); }
     }
-    private void listenPlatform(int id){if(!running||id!=generation||platform==null)return;try{Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_LANGUAGE,"en-US").putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1).putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false);platform.startListening(intent);}catch(RuntimeException error){stop();status("unavailable","Platform speech failed to start");}}
-    private synchronized void emit(String text,double confidence,boolean finalResult,String backend){try{output.accept(new JSONObject().put("type","result").put("text",text).put("confidence",confidence).put("final",finalResult).put("utteranceId",backend+"-"+generation+"-"+(++utterance)));}catch(Exception ignored){}}
-    private void status(String state,String message){try{output.accept(new JSONObject().put("type","status").put("state",state).put("message",message));}catch(Exception ignored){}}
+    private void listenPlatform(int id) {
+        if(!running||id!=generation||platform==null)return;
+        final int attempt=++platformAttempt;
+        try {
+            platform.setRecognitionListener(new RecognitionListener(){
+                private boolean complete;
+                private boolean current(){return running&&id==generation&&attempt==platformAttempt&&!complete;}
+                public void onReadyForSpeech(Bundle p){if(current())status("listening",platformLocal?"Listening · Android on-device speech":"Listening · platform service may process audio online");}
+                public void onBeginningOfSpeech(){} public void onRmsChanged(float v){} public void onBufferReceived(byte[] b){} public void onEndOfSpeech(){}
+                public void onError(int code){
+                    if(!current())return;complete=true;
+                    if(code==SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS){stop();status("denied","Microphone permission denied");return;}
+                    // Silence and an unrecognized phrase are normal during a race.
+                    if(code==SpeechRecognizer.ERROR_NO_MATCH||code==SpeechRecognizer.ERROR_SPEECH_TIMEOUT){main.postDelayed(()->listenPlatform(id),150);return;}
+                    retries++;if(retries>=8){stop();status("unavailable","Speech service repeatedly failed; pair a phone or use offline Vosk");return;}
+                    status("retrying","Speech service interrupted; reconnecting…");
+                    main.postDelayed(()->listenPlatform(id),Math.min(8000,500L*retries));
+                }
+                public void onResults(Bundle results){
+                    if(!current())return;complete=true;retries=0;
+                    ArrayList<String> list=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    float[] confidence=results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+                    if(list!=null&&!list.isEmpty())emit(list.get(0),confidence!=null&&confidence.length>0&&confidence[0]>=0?confidence[0]:0.6,true,"platform-"+id+"-"+attempt);
+                    main.postDelayed(()->listenPlatform(id),150);
+                }
+                public void onPartialResults(Bundle results){} public void onEvent(int code,Bundle b){}
+            });
+            Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_LANGUAGE,"en-US").putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1).putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false);
+            platform.startListening(intent);
+        }catch(RuntimeException error){stop();status("unavailable","Platform speech failed to start");}
+    }
+    private synchronized void emit(String text,double confidence,boolean finalResult,String utteranceId){try{output.accept(new JSONObject().put("type","result").put("text",text).put("confidence",confidence).put("final",finalResult).put("utteranceId",utteranceId).put("sessionId",clientSession));}catch(Exception ignored){}}
+    private void status(String state,String message){try{output.accept(new JSONObject().put("type","status").put("state",state).put("message",message).put("sessionId",clientSession));}catch(Exception ignored){}}
     public void stop(){running=false;generation++;main.removeCallbacksAndMessages(null);if(platform!=null){platform.cancel();platform.destroy();platform=null;}if(service!=null){service.stop();service.shutdown();service=null;}if(recognizer!=null){recognizer.close();recognizer=null;}if(model!=null){model.close();model=null;}}
     public void close(){stop();worker.shutdown();}
 }

@@ -29,7 +29,8 @@ public final class MainActivity extends Activity {
     private WebView web;
     private BikeSensors sensors;
     private VoiceEngine voice;
-    private boolean resumed, sensorRequested, pendingOnline;
+    private boolean resumed, sensorRequested, pendingOnline, voiceRequested;
+    private String voiceSession;
     private String exportData;
     @Override public void onCreate(Bundle state){
         super.onCreate(state);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -59,15 +60,16 @@ public final class MainActivity extends Activity {
     private static boolean trusted(Uri uri){return "https".equals(uri.getScheme())&&"app.breakaway.local".equals(uri.getHost())&&(uri.getPort()==-1||uri.getPort()==443);}
     private static WebResourceResponse error(int code,String message){return new WebResourceResponse("text/plain","UTF-8",code,message,new HashMap<>(),new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));}
     private void emit(String name,JSONObject detail){runOnUiThread(()->{if(web!=null&&web.getUrl()!=null&&trusted(Uri.parse(web.getUrl())))web.evaluateJavascript("window.dispatchEvent(new CustomEvent("+JSONObject.quote(name)+",{detail:"+detail.toString()+"}));",null);});}
-    private void status(String state,String message){try{emit("breakaway-voice",new JSONObject().put("type","status").put("state",state).put("message",message));}catch(Exception ignored){}}
+    private void status(String state,String message){try{emit("breakaway-voice",new JSONObject().put("type","status").put("state",state).put("message",message).put("sessionId",voiceSession));}catch(Exception ignored){}}
     private void reportCapabilities(){try{JSONObject object=new JSONObject().put("type","capabilities").put("model",Build.MODEL).put("android",Build.VERSION.RELEASE).put("sdk",Build.VERSION.SDK_INT).put("build",Build.DISPLAY).put("appVersion",BuildConfig.VERSION_NAME).put("microphone",getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE)).put("microphonePermission",checkSelfPermission(Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED).put("platformSpeech",SpeechRecognizer.isRecognitionAvailable(this));
         try{object.put("webview",WebView.getCurrentWebViewPackage().versionName);}catch(Exception ignored){object.put("webview","unknown");}
         emit("breakaway-bike",object);}catch(Exception ignored){}}
-    private void beginVoice(boolean allowOnline){if(!resumed)return;if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE)){status("unavailable","This tablet reports no microphone. Pair a phone instead.");return;}
-        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){pendingOnline=allowOnline;requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},MIC);return;}voice.start(allowOnline);}
-    @Override public void onRequestPermissionsResult(int request,String[] names,int[] grants){super.onRequestPermissionsResult(request,names,grants);if(request==MIC){if(grants.length>0&&grants[0]==PackageManager.PERMISSION_GRANTED)beginVoice(pendingOnline);else status("denied","Microphone permission denied. Voice is off; other controls remain available.");reportCapabilities();}}
+    private void requestVoice(boolean allowOnline,String sessionId){voiceRequested=true;pendingOnline=allowOnline;voiceSession=sessionId;beginVoice();}
+    private void beginVoice(){if(!resumed||!voiceRequested)return;if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE)){voiceRequested=false;status("unavailable","This tablet reports no microphone. Pair a phone instead.");return;}
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},MIC);return;}voice.start(pendingOnline,voiceSession);}
+    @Override public void onRequestPermissionsResult(int request,String[] names,int[] grants){super.onRequestPermissionsResult(request,names,grants);if(request==MIC){if(voiceRequested){if(grants.length>0&&grants[0]==PackageManager.PERMISSION_GRANTED)beginVoice();else {voiceRequested=false;status("denied","Microphone permission denied. Voice is off; other controls remain available.");}}reportCapabilities();}}
     @Override protected void onResume(){super.onResume();resumed=true;if(web!=null)web.onResume();if(sensorRequested)sensors.start();}
-    @Override protected void onPause(){resumed=false;voice.stop();status("stopped","Microphone off while app is inactive");sensors.stop();if(web!=null)web.onPause();super.onPause();}
+    @Override protected void onPause(){resumed=false;voiceRequested=false;voice.stop();status("stopped","Microphone off while app is inactive");sensors.stop();if(web!=null)web.onPause();super.onPause();}
     @Override protected void onDestroy(){sensors.close();voice.close();if(web!=null){web.removeJavascriptInterface("BreakawayBridge");web.destroy();web=null;}super.onDestroy();}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request==EXPORT&&result==RESULT_OK&&data!=null&&data.getData()!=null&&exportData!=null){try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out!=null)out.write(exportData.getBytes(StandardCharsets.UTF_8));}catch(Exception ignored){}}exportData=null;}
     public final class Bridge {
@@ -77,8 +79,9 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void reportCapabilities(){runOnUiThread(MainActivity.this::reportCapabilities);}
         @JavascriptInterface public void startSensors(){runOnUiThread(()->{sensorRequested=true;if(resumed)sensors.start();});}
         @JavascriptInterface public void stopSensors(){runOnUiThread(()->{sensorRequested=false;sensors.stop();});}
-        @JavascriptInterface public void startVoice(boolean allowOnline){runOnUiThread(()->beginVoice(allowOnline));}
-        @JavascriptInterface public void stopVoice(){runOnUiThread(()->{voice.stop();status("stopped","Microphone off");});}
+        @JavascriptInterface public void startVoice(boolean allowOnline){runOnUiThread(()->requestVoice(allowOnline,null));}
+        @JavascriptInterface public void startVoiceSession(boolean allowOnline,String sessionId){if(sessionId==null||sessionId.length()>80)return;runOnUiThread(()->requestVoice(allowOnline,sessionId));}
+        @JavascriptInterface public void stopVoice(){runOnUiThread(()->{voiceRequested=false;voice.stop();status("stopped","Microphone off");});}
         @JavascriptInterface public void exportFile(String name,String text){if(name==null||text==null||text.length()>2000000)return;String safe=name.replaceAll("[^a-zA-Z0-9._-]","_");runOnUiThread(()->{if(exportData!=null)return;exportData=text;Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(safe.endsWith(".csv")?"text/csv":"application/json").putExtra(Intent.EXTRA_TITLE,safe);try{startActivityForResult(intent,EXPORT);}catch(RuntimeException error){exportData=null;}});}
     }
 }

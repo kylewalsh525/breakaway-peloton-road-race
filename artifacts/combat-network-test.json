@@ -1,0 +1,60 @@
+{
+  "test": "Recognized voice to authoritative multiplayer action and stale queue handling",
+  "passed": true,
+  "base": "http://127.0.0.1:8787",
+  "checksPassed": 8,
+  "checks": [
+    "Real server publishes attack identities for browser verification",
+    "Voice steering updates authoritative state without an acoustic fixture",
+    "Voice attack older than 450 ms is discarded when a busy POST finishes",
+    "HIT was not replayed into an authoritative attack",
+    "Failed POST discards even a recent queued voice attack",
+    "KICK was not replayed into an authoritative attack",
+    "Recognized command to authoritative state p95 stays below 250 ms locally",
+    "No uncaught JavaScript errors during delayed and failed input requests"
+  ],
+  "elapsedSeconds": 13.96,
+  "latency": {
+    "metric": "Synthetic final recognized command dispatch to matching real SSE authoritative state",
+    "samples": [
+      {
+        "command": "left",
+        "milliseconds": 46.4
+      },
+      {
+        "command": "right",
+        "milliseconds": 30.3
+      },
+      {
+        "command": "left",
+        "milliseconds": 27
+      },
+      {
+        "command": "right",
+        "milliseconds": 25.4
+      },
+      {
+        "command": "left",
+        "milliseconds": 22.9
+      },
+      {
+        "command": "hit",
+        "milliseconds": 65.1
+      },
+      {
+        "command": "kick",
+        "milliseconds": 57.8
+      }
+    ],
+    "medianMilliseconds": 30.3,
+    "p95Milliseconds": 65.1
+  },
+  "uncaughtErrors": [],
+  "failure": null,
+  "limitations": [
+    "Native recognized speech events and Peloton telemetry were synthetic.",
+    "No microphone, speech recognizer, acoustic accuracy, physical Peloton, or remote network latency was measured.",
+    "One real telemetry POST was held for over 450 ms; another was failed while a recent attack was pending.",
+    "This localhost headless Chrome measurement excludes the 95 ms display interpolation buffer."
+  ]
+}

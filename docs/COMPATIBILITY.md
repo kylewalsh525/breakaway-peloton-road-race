@@ -11,6 +11,12 @@ No physical Peloton was connected during this build. The following are **upstrea
 
 Source: OpenRide's [sensor protocol notes](https://github.com/digitalducktape/OpenRide/blob/main/docs/SENSOR_PROTOCOL.md). Breakaway has **zero physically certified firmware/device tuples** at delivery. Do not relabel this table as a support guarantee.
 
+## Playing against another Peloton rider
+
+Each rider needs an installed Android build on a compatible tablet, a verified live power source, and access to the same running HTTPS multiplayer server. Create or join the same private room, enable voice on each tablet (or pair a phone), then use **ready** and **start** from the lobby. A normal web page on the tablet cannot access the internal Peloton service by itself. The game does not connect to Peloton's account system or class leaderboard; opponents join the game's own rooms.
+
+The repository contains the Android adapter and server source, but an Android APK, an accessible HTTPS deployment, and a successful physical ride are separate delivery steps. The current development environment has no `adb` command or SDK in the standard macOS Android SDK location. Controller regression tests use simulated recognition/Bluetooth events; they do not establish that tablet installation, microphone capture, or live telemetry works on an owner's bike.
+
 ## Runtime decision tree
 
 The shell first determines whether the local game can render and whether the tablet advertises a microphone. It binds the documented V1 and Bike actions under `com.onepeloton.affernetservice`, checks the returned Binder descriptor, and registers read-only callbacks. A successful bind with no data is still probing, not connected.
@@ -33,6 +39,8 @@ The fixed header contains cadence, centi-watts, two uninterpreted longs, current
 | Old/locked tablet fallback | Separate screen/browser with a supported BLE Cycling Power/FTMS source; voice may run on paired phone |
 
 A paired phone provides **commands**, not Peloton power measurements. It cannot make an inaccessible tablet service readable. Browser Bluetooth also requires a bike/meter that actually advertises the relevant standard; this project does not assert that every Peloton does so. Legacy Peloton Messenger sensor protocols, undocumented future Bike/Pro devices and arbitrary alternative framings are not implemented or claimed compatible.
+
+Changing power sources cancels ownership of an unfinished Bluetooth connection attempt. Late chooser, connection, or notification callbacks cannot replace the newly selected source. Native measurements must pass source and range validation before the client marks them live; malformed frames are not displayed as successful sensor connections.
 
 ## Before and after an update
 

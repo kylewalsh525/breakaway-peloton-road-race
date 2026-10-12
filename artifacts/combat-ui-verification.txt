@@ -1,0 +1,57 @@
+Built web assets, Android game assets, and dist/PLAY-SOLO.html (191 KiB).
+PASS: Desktop garage boots
+PASS: Four selectable courses
+PASS: Desktop start control fits inside the viewport
+PASS: Voice can be enabled before starting a race
+PASS: Course coast selects
+PASS: Course canyon selects
+PASS: Course metro selects
+PASS: Course alpine selects
+PASS: Standalone multiplayer explains server setup
+PASS: Settings save and close
+PASS: Controls explain virtual versus physical stopping
+PASS: Missing native sensor service is explained
+PASS: Unavailable Peloton data does not become demo power
+PASS: Solo countdown reaches racing
+PASS: Demo power is visibly labeled
+PASS: Keyboard steers left
+PASS: Keyboard steers right
+PASS: Boost spends stamina
+PASS: Keyboard coast reaches the simulation
+PASS: Keyboard resume restores propulsion
+PASS: Solo pause dialog opens
+PASS: Eight riders exist in the collapsed race order
+PASS: Low quality renders a 640-pixel canvas
+PASS: Race action buttons remain clickable beneath a visible notification
+PASS: Leaving solo returns to the garage
+PASS: Home 1920×1080 has no horizontal page overflow
+PASS: Home 1920×1080 start control is clickable
+PASS: Race 1920×1080 has no horizontal page overflow
+PASS: Race 1920×1080 has readable power and voice controls
+PASS: Home 1024×600 has no horizontal page overflow
+PASS: Home 1024×600 start control is clickable
+PASS: Race 1024×600 has no horizontal page overflow
+PASS: Race 1024×600 has readable power and voice controls
+PASS: Home 390×844 has no horizontal page overflow
+PASS: Home 390×844 start control is clickable
+PASS: Mobile settings can be saved
+PASS: Race 390×844 has no horizontal page overflow
+PASS: Race 390×844 has readable power and voice controls
+PASS: Native boot selects real sensors and awaits frames
+PASS: Valid synthetic native frames enable telemetry
+PASS: Native online speech is opt-in
+PASS: Home voice setup starts without online consent
+PASS: Voice starts a solo race from the garage
+PASS: Low-confidence speech cannot steer
+PASS: Native voice steers the simulation
+PASS: Repeated native final result is de-duplicated
+PASS: Interim speech cannot steer
+PASS: Voice coast reaches the simulation
+PASS: Voice resume restores propulsion
+PASS: Lost native stream becomes stale and zero power
+PASS: Microphone denial restores the enable control
+PASS: Complete accelerated solo race reaches eight-rider results
+PASS: Results award career XP
+PASS: Race again starts another race
+PASS: No uncaught JavaScript errors
+Saved 55 checks to /Users/kylewalsh/github-local/breakaway-peloton-road-race/artifacts/retro-browser-test.json

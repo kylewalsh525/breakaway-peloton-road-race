@@ -56,8 +56,17 @@ export async function createApp(options = {}) {
         emit(s, message); }
     function roomOf(s) { const r = rooms.get(s.roomCode); if (!r)
         throw new HttpError(409, 'Join a room first'); return r; }
+    function pairing(s) {
+        if (s.controlTarget)
+            return { role: 'controller', name: s.controlTarget.name };
+        if (s.controller)
+            return { role: 'rider', name: s.controller.name };
+        return null;
+    }
     function unpair(s) {
+        const wasPaired = !!(s.controlTarget || s.controller);
         if (s.controlTarget) {
+            emit(s.controlTarget, { kind: 'unpaired' });
             s.controlTarget.controller = null;
             s.controlTarget = null;
         }
@@ -66,6 +75,8 @@ export async function createApp(options = {}) {
             emit(s.controller, { kind: 'unpaired' });
             s.controller = null;
         }
+        if (wasPaired)
+            emit(s, { kind: 'unpaired' });
         for (const [k, p] of pairs)
             if (p.target === s)
                 pairs.delete(k);
@@ -190,15 +201,18 @@ export async function createApp(options = {}) {
         }
         if (req.method === 'GET' && url.pathname === '/api/me') {
             const s = session(req);
-            return sendJson(res, 200, { id: s.id, name: s.name, nextInputSeq: (rooms.get(s.roomCode)?.race?.riders.find(r => r.id === s.id)?.lastInput ?? -1) + 1, nextControlSeq: s.controlSeq + 1, room: s.roomCode ? publicRoom(roomOf(s)) : null });
+            return sendJson(res, 200, { id: s.id, name: s.name, pairing: pairing(s), nextInputSeq: (rooms.get(s.roomCode)?.race?.riders.find(r => r.id === s.id)?.lastInput ?? -1) + 1, nextControlSeq: s.controlSeq + 1, room: s.roomCode ? publicRoom(roomOf(s)) : null });
         }
         if (req.method === 'GET' && url.pathname === '/api/stream') {
             const s = session(req);
             s.stream?.end();
             s.stream = res;
+            s.disconnectedAt = null;
             res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
             res.flushHeaders();
-            emit(s, { kind: 'hello', id: s.id, protocol: PROTOCOL, nextInputSeq: (rooms.get(s.roomCode)?.race?.riders.find(r => r.id === s.id)?.lastInput ?? -1) + 1, nextControlSeq: s.controlSeq + 1 });
+            emit(s, { kind: 'hello', id: s.id, protocol: PROTOCOL, pairing: pairing(s), nextInputSeq: (rooms.get(s.roomCode)?.race?.riders.find(r => r.id === s.id)?.lastInput ?? -1) + 1, nextControlSeq: s.controlSeq + 1 });
+            if (pairing(s))
+                emit(s, { kind: 'paired', ...pairing(s), restored: true });
             const room = rooms.get(s.roomCode);
             if (room) {
                 const r = room.race?.riders.find(x => x.id === s.id);
@@ -211,6 +225,7 @@ export async function createApp(options = {}) {
             res.on('close', () => { if (s.stream === res) {
                 s.stream = null;
                 s.disconnectedAt = clock();
+                s.seen = s.disconnectedAt;
                 const r = rooms.get(s.roomCode)?.race?.riders.find(x => x.id === s.id);
                 if (r)
                     r.connected = false;
@@ -241,6 +256,7 @@ export async function createApp(options = {}) {
                 const room = [...rooms.values()].find(r => r.quick && !r.race && r.trackId === trackId && r.mode === (b.mode === 'equalized' ? 'equalized' : 'arcade') && r.members.size < 8) || newRoom(s, { ...b, trackId }, true);
                 join(s, room);
                 s.ready = true;
+                broadcast(room, { kind: 'room', room: publicRoom(room) });
                 return sendJson(res, 200, { room: publicRoom(room) });
             }
             if (url.pathname === '/api/rooms/join') {
@@ -299,7 +315,7 @@ export async function createApp(options = {}) {
                 if (!pairAttempts.allow(ip))
                     throw new HttpError(429, 'Too many pairing attempts');
                 const c = String(b.code || '').replace(/[ -]/g, '').toUpperCase(), p = pairs.get(c);
-                if (!p || p.expires < clock())
+                if (!p || p.expires <= clock())
                     throw new HttpError(404, 'Pairing code expired or not found');
                 if (p.target === s)
                     throw new HttpError(400, 'Use a separate device or browser context for the controller');
@@ -309,7 +325,8 @@ export async function createApp(options = {}) {
                 s.controlSeq = -1;
                 p.target.controller = s;
                 pairs.delete(c);
-                emit(p.target, { kind: 'paired', name: s.name });
+                emit(p.target, { kind: 'paired', ...pairing(p.target) });
+                emit(s, { kind: 'paired', ...pairing(s) });
                 return sendJson(res, 200, { name: p.target.name });
             }
             if (url.pathname === '/api/pair/revoke') {
@@ -320,12 +337,14 @@ export async function createApp(options = {}) {
                 const target = s.controlTarget;
                 if (!target)
                     throw new HttpError(403, 'Pair this controller first');
-                if (!Number.isSafeInteger(b.seq) || b.seq <= s.controlSeq)
+                if (!Number.isSafeInteger(b.seq) || b.seq < 0 || b.seq <= s.controlSeq)
                     throw new HttpError(409, 'Duplicate controller input');
                 if (![...ACTIONS, 'ready', 'start'].includes(b.command))
                     throw new HttpError(400, 'Unknown command');
                 s.controlSeq = b.seq;
                 const room = roomOf(target);
+                if (target.spectator)
+                    throw new HttpError(403, 'Spectators cannot control riders');
                 if (b.command === 'ready') {
                     target.ready = true;
                     broadcast(room, { kind: 'room', room: publicRoom(room) });
@@ -439,14 +458,14 @@ export async function createApp(options = {}) {
         for (const [key, s] of sessions) {
             if (s.stream)
                 emit(s, { kind: 'heartbeat', serverTime: Date.now() });
-            if (!s.stream && s.disconnectedAt && now - s.disconnectedAt > 120000) {
+            if (!s.stream && s.disconnectedAt != null && now - s.disconnectedAt > 120000) {
                 const r = rooms.get(s.roomCode)?.race?.riders.find(x => x.id === s.id);
                 if (r) {
                     r.dnf = true;
                     r.coast = true;
                 }
             }
-            if (now - s.seen > 1800000) {
+            if (!s.stream && now - s.seen > 1800000) {
                 leave(s);
                 unpair(s);
                 s.stream?.end();

@@ -1,0 +1,39 @@
+{
+  "checked": 576,
+  "checks": {
+    "sameTimerSamePoseAtDifferentClocks": true,
+    "punchBothDirections": true,
+    "kickBothDirections": true,
+    "chainBothDirections": true,
+    "noSpriteTouchesImageEdges": true,
+    "cacheBounded": true
+  },
+  "extents": {
+    "punchLeft": {
+      "min": -66,
+      "max": 33
+    },
+    "punchRight": {
+      "min": -34,
+      "max": 65
+    },
+    "kickLeft": {
+      "min": -76,
+      "max": 33
+    },
+    "kickRight": {
+      "min": -34,
+      "max": 75
+    },
+    "chainLeft": {
+      "min": -104,
+      "max": 33
+    },
+    "chainRight": {
+      "min": -34,
+      "max": 103
+    }
+  },
+  "clipped": [],
+  "cachedPoses": 192
+}

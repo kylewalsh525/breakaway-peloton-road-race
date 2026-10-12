@@ -1,0 +1,50 @@
+{
+  "test": "Local solo race frame timing before presentation interpolation changes",
+  "scope": {
+    "url": "http://127.0.0.1:8787",
+    "browser": "Installed Google Chrome, headless, separate Playwright browser",
+    "platform": "Local macOS development computer",
+    "viewport": { "width": 1440, "height": 900 },
+    "renderQuality": "auto",
+    "mode": "Solo race with demo telemetry",
+    "sampleSeconds": 6,
+    "frameCount": 362,
+    "instrumentation": "Measured the application frame callback and requestAnimationFrame intervals; Chrome CPU sampling at 1 ms; PerformanceObserver long-task records"
+  },
+  "frameCallbackMilliseconds": {
+    "median": 1.1,
+    "p95": 1.6,
+    "maximum": 2.9
+  },
+  "animationFrameIntervalMilliseconds": {
+    "median": 16.7,
+    "p95": 16.7,
+    "maximum": 16.8
+  },
+  "longTasks": [],
+  "reportedRendererFPS": 60.004,
+  "cpuSampleCounts": {
+    "idle": 4322,
+    "program": 154,
+    "drawImage": 86,
+    "box": 57,
+    "fillRect": 55,
+    "project": 14,
+    "render": 12,
+    "road": 11,
+    "updateHud": 6,
+    "garbageCollector": 5
+  },
+  "assessment": [
+    "No local CPU frame-budget bottleneck or long task appeared in this sample.",
+    "Solo simulation positions were presented at 30 Hz without pose interpolation, which can produce motion jitter despite a 60 Hz renderer.",
+    "Camera lane smoothing adds perceived steering latency; toast overlays could intercept action-button clicks.",
+    "No SnapshotBuffer correctness defect was demonstrated. Its 95 ms multiplayer interpolation buffer remains unchanged; adaptive buffering needs measured network-jitter evidence."
+  ],
+  "limitations": [
+    "This short headless desktop sample is not a physical Peloton performance measurement.",
+    "No real microphone, bike sensor, remote server, internet latency, or Wi-Fi jitter was measured.",
+    "Timing instrumentation adds small overhead, and concurrently running development tasks may influence results.",
+    "The hardware model and Chrome version were not recorded; results are evidence for this local sample, not a device guarantee."
+  ]
+}

@@ -1,13 +1,13 @@
 import { SIM_HZ, STALE_MS, clamp, rng, validateName, validateInput } from './protocol.mjs';
 import { getTrack, gradeAt, makeCourse } from './tracks.mjs';
 export const DT = 1 / SIM_HZ;
-export const COLORS = ['#ffc86a', '#76e8d3', '#f17bb5', '#99a9ff', '#ff9572', '#c9ee91', '#70caff', '#e7c8ff'];
+export const COLORS = ['#d52e2e', '#426cda', '#e2bd36', '#8952b6', '#e27832', '#4b9860', '#53a8cc', '#d9d8ba'];
 const BOT_NAMES = ['Moxie', 'Ghost', 'Switch', 'Juno', 'Echo', 'Sprocket', 'Rivet', 'Vega'];
 const COOLDOWNS = { hit: .85, kick: 1.25, block: 2.2, boost: 4.2, left: .18, right: .18, center: .18, brake: .2, coast: .2, resume: .2 };
 export function createRider(id, name = 'Rider', options = {}) {
     return { id, name: validateName(name), bot: !!options.bot, color: options.color || COLORS[0],
         lane: options.lane ?? 2, targetLane: options.lane ?? 2, z: 0, speed: 0, watts: 0, cadence: 0, resistance: 0, source: options.bot ? 'bot' : 'demo',
-        energy: 65, armor: 100, chain: 0, shield: 0, boost: 0, stun: 0, action: '', actionTimer: 0, coast: false, brake: 0,
+        energy: 65, armor: 100, chain: 0, shield: 0, boost: 0, stun: 0, action: '', actionTimer: 0, actionDuration: 0, actionId: 0, actionSide: 1, actionChain: false, pendingAttack: null, impactTimer: 0, impactDuration: 0, impactSide: 1, coast: false, brake: 0,
         cooldown: {}, lastInput: -1, lastTelemetry: -Infinity, stale: true, connected: true,
         finishedAt: null, dnf: false, hits: 0, crashes: 0, pickups: 0, draft: 0, combo: 0,
         ftp: clamp(options.ftp || 200, 75, 500), effort: 0, powerSum: 0, samples: 0, consumed: [], ai: 0, aiPower: options.aiPower || 190 };
@@ -50,6 +50,9 @@ export function actionsFor(race, rider, actions) {
             rider.coast = true;
             rider.boost = 0;
             rider.shield = 0;
+            rider.pendingAttack = null;
+            rider.action = '';
+            rider.actionTimer = 0;
             event(race, 'coast', rider);
             continue;
         }
@@ -80,41 +83,67 @@ export function actionsFor(race, rider, actions) {
             event(race, 'block', rider);
         }
         else if (action === 'hit' || action === 'kick') {
-            if (rider.stun > 0 || rider.coast || rider.energy < 6)
+            if (rider.stun > 0 || rider.coast || rider.energy < 6 || rider.actionTimer > 0)
                 continue;
             rider.energy -= 6;
+            const chain = action === 'hit' && rider.chain > 0;
+            const target = attackTarget(race, rider, chain ? 10 : 7);
             rider.action = action;
-            rider.actionTimer = .4;
-            const reach = rider.chain > 0 ? 10 : 7;
-            const targets = race.riders.filter(t => t !== rider && !t.coast && !t.dnf && t.finishedAt === null && Math.abs(t.z - rider.z) < reach && Math.abs(t.lane - rider.lane) < 1.25);
-            const target = targets.sort((a, b) => Math.abs(a.z - rider.z) - Math.abs(b.z - rider.z))[0];
-            if (target) {
-                if (target.shield > 0) {
-                    event(race, 'parry', target, { attacker: rider.id });
-                    rider.stun = .2;
-                }
-                else {
-                    const damage = action === 'kick' ? 24 : rider.chain > 0 ? 25 : 17;
-                    target.armor = clamp(target.armor - damage, 0, 100);
-                    target.speed *= action === 'kick' ? .78 : .88;
-                    target.stun = .28;
-                    rider.hits++;
-                    rider.combo++;
-                    rider.energy = clamp(rider.energy + 7, 0, 100);
-                    if (action === 'kick')
-                        target.targetLane = clamp(target.targetLane + (target.lane >= rider.lane ? 1 : -1), 0, 4);
-                    event(race, 'hit', rider, { target: target.id, damage, action });
-                    if (target.armor <= 0)
-                        crash(race, target);
-                }
-            }
-            else
-                event(race, 'swing', rider, { action });
+            rider.actionDuration = action === 'kick' ? .62 : chain ? .66 : .48;
+            rider.actionTimer = rider.actionDuration;
+            rider.actionId++;
+            rider.actionChain = chain;
+            rider.actionSide = target && target.lane !== rider.lane ? Math.sign(target.lane - rider.lane) : rider.actionSide;
+            // Start the pose immediately; resolve contact at the visible strike, once.
+            rider.pendingAttack = { action, chain, side: rider.actionSide, contactTimer: rider.actionDuration * .55 };
         }
         rider.cooldown[action] = COOLDOWNS[action];
     }
 }
-function crash(race, rider) { rider.crashes++; rider.armor = 65; rider.stun = 1.6; rider.speed *= .35; rider.chain = 0; rider.combo = 0; rider.boost = 0; event(race, 'crash', rider); }
+function attackTarget(race, rider, reach, side = 0) {
+    return race.riders.filter(t => t !== rider && !t.coast && !t.dnf && t.finishedAt === null &&
+        Math.abs(t.z - rider.z) < reach && Math.abs(t.lane - rider.lane) < 1.25 &&
+        (!side || Math.abs(t.lane - rider.lane) < .15 || Math.sign(t.lane - rider.lane) === side))
+        .sort((a, b) => Math.abs(a.z - rider.z) - Math.abs(b.z - rider.z))[0];
+}
+function recoil(rider, duration, side = 1) {
+    rider.stun = Math.max(rider.stun, duration);
+    rider.impactTimer = duration;
+    rider.impactDuration = duration;
+    rider.impactSide = side;
+}
+function resolveAttack(race, rider) {
+    const attack = rider.pendingAttack;
+    if (!attack || rider.actionTimer > attack.contactTimer) return;
+    rider.pendingAttack = null;
+    if (rider.coast || rider.dnf || rider.finishedAt !== null) return;
+    const target = attackTarget(race, rider, attack.chain ? 10 : 7, attack.side);
+    if (!target) {
+        event(race, 'swing', rider, { action: attack.action, chain: attack.chain, side: attack.side });
+        return;
+    }
+    if (target.shield > 0) {
+        event(race, 'parry', target, { attacker: rider.id });
+        recoil(rider, .2, attack.side);
+        return;
+    }
+    const damage = attack.action === 'kick' ? 24 : attack.chain ? 25 : 17;
+    target.armor = clamp(target.armor - damage, 0, 100);
+    target.speed *= attack.action === 'kick' ? .78 : .88;
+    recoil(target, .28, -attack.side);
+    rider.hits++;
+    rider.combo++;
+    rider.energy = clamp(rider.energy + 7, 0, 100);
+    if (attack.action === 'kick') target.targetLane = clamp(target.targetLane + attack.side, 0, 4);
+    event(race, 'hit', rider, { target: target.id, damage, action: attack.action, chain: attack.chain, side: attack.side });
+    if (target.armor <= 0) crash(race, target);
+}
+function crash(race, rider) {
+    rider.crashes++; rider.armor = 65; recoil(rider, 1.6, rider.impactSide);
+    rider.speed *= .35; rider.chain = 0; rider.combo = 0; rider.boost = 0;
+    rider.pendingAttack = null; rider.action = ''; rider.actionTimer = 0;
+    event(race, 'crash', rider);
+}
 export function applyInput(race, id, message, nowMs) {
     const rider = race.riders.find(r => r.id === id);
     if (!rider || rider.bot)
@@ -202,7 +231,7 @@ export function stepRace(race, nowMs = race.time * 1000) {
             continue;
         if (r.bot)
             updateBot(race, r, dt, nowMs);
-        for (const key of ['shield', 'boost', 'stun', 'actionTimer', 'brake', 'chain'])
+        for (const key of ['shield', 'boost', 'stun', 'actionTimer', 'impactTimer', 'brake', 'chain'])
             r[key] = Math.max(0, r[key] - dt);
         for (const key of Object.keys(r.cooldown))
             r.cooldown[key] = Math.max(0, r.cooldown[key] - dt);
@@ -249,7 +278,7 @@ export function stepRace(race, nowMs = race.time * 1000) {
                 }
                 r.speed *= o.type === 'barrier' ? .55 : .78;
                 r.armor -= o.type === 'barrier' ? 30 : 12;
-                r.stun = .5;
+                recoil(r, .5, r.lane < 2 ? -1 : 1);
                 event(race, 'obstacle', r, { kind: o.type });
                 if (r.armor <= 0)
                     crash(race, r);
@@ -273,6 +302,7 @@ export function stepRace(race, nowMs = race.time * 1000) {
             event(race, 'finish', r, { seconds: r.finishedAt });
         }
     }
+    for (const r of race.riders) resolveAttack(race, r);
     const humans = race.riders.filter(r => !r.bot);
     if ((humans.length && humans.every(r => r.finishedAt !== null || r.dnf)) || race.riders.every(r => r.finishedAt !== null || r.dnf) || race.elapsed >= race.maxSeconds || (race.firstHumanFinish!==null && race.elapsed-race.firstHumanFinish>=race.finishGrace)) {
         race.phase = 'finished';
@@ -301,7 +331,8 @@ export function snapshot(race) {
         countdown: race.countdown, phase: race.phase, objects: race.objects, events: race.events,
         riders: standings(race).map((r, i) => ({ id: r.id, name: r.name, bot: r.bot, color: r.color, rank: i + 1, lane: r.lane, targetLane: r.targetLane, z: r.z, speed: r.speed,
             watts: r.watts, cadence: r.cadence, resistance: r.resistance, source: r.source, stale: r.stale, connected: r.connected,
-            energy: r.energy, armor: r.armor, chain: r.chain, shield: r.shield, boost: r.boost, stun: r.stun, coast: r.coast, action: r.action, actionTimer: r.actionTimer,
+            energy: r.energy, armor: r.armor, chain: r.chain, shield: r.shield, boost: r.boost, stun: r.stun, coast: r.coast, action: r.action, actionTimer: r.actionTimer, actionDuration: r.actionDuration, actionId: r.actionId, actionSide: r.actionSide, actionChain: r.actionChain,
+            impactTimer: r.impactTimer, impactDuration: r.impactDuration, impactSide: r.impactSide, brake: r.brake,
             draft: r.draft, finishedAt: r.finishedAt, dnf: r.dnf, hits: r.hits, crashes: r.crashes, pickups: r.pickups,
             avgWatts: r.samples ? r.powerSum / r.samples : 0, kj: r.effort, consumed: r.consumed })) };
 }

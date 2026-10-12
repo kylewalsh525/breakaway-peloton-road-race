@@ -30,11 +30,11 @@ test('lane steering is clamped and smoothly interpolated', () => { const { race,
 } assert.equal(rider.targetLane, 0); run(race, 30); assert.equal(rider.lane, 0); rider.cooldown = {}; actionsFor(race, rider, ['center']); assert.equal(rider.targetLane, 2); });
 test('coast and resume never change physical resistance', () => { const { race, rider } = setup(); run(race, 200); const resistance = rider.resistance; actionsFor(race, rider, ['coast']); run(race, 150); assert.equal(rider.speed, 0); assert.equal(rider.resistance, resistance); actionsFor(race, rider, ['resume']); run(race, 60); assert.ok(rider.speed > 0); });
 test('boost requires real-time power and stamina', () => { const { race, rider } = setup(); actionsFor(race, rider, ['boost']); assert.equal(rider.boost, 0); applyInput(race, 'me', input(1), 0); rider.energy = 20; actionsFor(race, rider, ['boost']); assert.equal(rider.boost, 0); rider.energy = 65; actionsFor(race, rider, ['boost']); assert.equal(rider.energy, 37); assert.ok(rider.boost > 2); actionsFor(race, rider, ['boost']); assert.equal(rider.energy, 37); });
-test('hit requires range and applies authoritative damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 3; rider.energy = 65; actionsFor(race, rider, ['hit']); assert.equal(other.armor, 83); assert.equal(rider.hits, 1); actionsFor(race, rider, ['hit']); assert.equal(other.armor, 83); });
-test('block parries attacks and avoids damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 2; actionsFor(race, other, ['block']); actionsFor(race, rider, ['hit']); assert.equal(other.armor, 100); assert.equal(rider.hits, 0); assert.equal(race.events.at(-1).type, 'parry'); });
-test('kick pushes lane and out-of-range attacks miss', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 3; actionsFor(race, rider, ['kick']); assert.equal(other.targetLane, 4); assert.equal(other.armor, 76); other.z = 100; rider.cooldown = {}; actionsFor(race, rider, ['hit']); assert.equal(rider.hits, 1); });
-test('chain increases reach and damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 9; rider.chain = 10; actionsFor(race, rider, ['hit']); assert.equal(other.armor, 75); });
-test('armor break triggers recovery, not elimination', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 2; other.armor = 10; actionsFor(race, rider, ['hit']); assert.equal(other.crashes, 1); assert.equal(other.armor, 65); assert.ok(other.stun > 1); assert.equal(other.dnf, false); });
+test('hit requires range and applies authoritative damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 3; rider.energy = 65; actionsFor(race, rider, ['hit']); run(race, 7); assert.equal(other.armor, 83); assert.equal(rider.hits, 1); actionsFor(race, rider, ['hit']); assert.equal(other.armor, 83); });
+test('block parries attacks and avoids damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 2; actionsFor(race, other, ['block']); actionsFor(race, rider, ['hit']); run(race, 7); assert.equal(other.armor, 100); assert.equal(rider.hits, 0); assert.equal(race.events.at(-1).type, 'parry'); });
+test('kick pushes lane and out-of-range attacks miss', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 3; actionsFor(race, rider, ['kick']); run(race, 9); assert.equal(other.targetLane, 4); assert.equal(other.armor, 76); other.z = 100; run(race, 20); rider.cooldown = {}; actionsFor(race, rider, ['hit']); run(race, 7); assert.equal(rider.hits, 1); });
+test('chain increases reach and damage', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 9; rider.chain = 10; actionsFor(race, rider, ['hit']); run(race, 9); assert.equal(other.armor, 75); });
+test('armor break triggers recovery, not elimination', () => { const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 2; other.armor = 10; actionsFor(race, rider, ['hit']); run(race, 7); assert.equal(other.crashes, 1); assert.equal(other.armor, 65); assert.ok(other.stun > 1); assert.equal(other.dnf, false); });
 test('pickups are consumed once per rider', () => { const { race, rider } = setup(); race.objects = [{ id: 'p', z: .2, lane: 2, type: 'boost' }]; rider.energy = 10; run(race, 2); assert.equal(rider.pickups, 1); assert.ok(rider.energy > 40); run(race, 10); assert.equal(rider.pickups, 1); });
 test('hazards reduce speed and armor; shield absorbs one', () => { const a = setup(), b = setup(); for (const pair of [a, b]) {
     pair.race.objects = [{ id: 'p', z: .2, lane: 2, type: 'barrier' }];
@@ -70,4 +70,50 @@ test('multiplayer ends after a 45-second grace period when a rival stops', () =>
     assert.equal(stopped.dnf, true);
     assert.ok(race.elapsed - race.firstHumanFinish >= 45);
     assert.ok(race.elapsed - race.firstHumanFinish < 45 + DT * 2);
+});
+
+
+test('attack starts immediately, resolves once at contact, and cannot overwrite an active swing', () => {
+    const { race, rider } = setup();
+    const other = addRider(race, 'other', 'Other', { lane: 3 }); other.z = 3;
+    actionsFor(race, rider, ['hit', 'kick']);
+    assert.equal(rider.action, 'hit'); assert.equal(rider.actionId, 1);
+    assert.equal(rider.actionDuration, .48); assert.equal(other.armor, 100);
+    run(race, 6); assert.equal(other.armor, 100);
+    run(race, 1); assert.equal(other.armor, 83); assert.equal(rider.hits, 1);
+    run(race, 12); assert.equal(rider.hits, 1); assert.equal(rider.action, '');
+    assert.equal(race.events.filter(e => e.type === 'hit').length, 1);
+});
+test('left-side kick follows the target and resolves on that side', () => {
+    const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 1 });
+    other.z = 3; actionsFor(race, rider, ['kick']);
+    assert.equal(rider.actionSide, -1); run(race, 9);
+    assert.equal(other.armor, 76); assert.equal(other.targetLane, 0);
+    assert.equal(other.impactSide, 1); assert.equal(other.impactDuration, .28);
+});
+test('a rider can dodge a committed swing before contact', () => {
+    const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 });
+    other.z = 3; actionsFor(race, rider, ['hit']); other.lane = other.targetLane = 1;
+    run(race, 7); assert.equal(rider.actionSide, 1); assert.equal(other.armor, 100);
+    assert.equal(race.events.at(-1).type, 'swing');
+});
+test('coasting cancels an attack before contact', () => {
+    const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 });
+    other.z = 3; actionsFor(race, rider, ['hit', 'coast']); run(race, 20);
+    assert.equal(other.armor, 100); assert.equal(rider.action, ''); assert.equal(rider.hits, 0);
+});
+test('chain art and damage remain consistent if the pickup expires mid-swing', () => {
+    const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 });
+    other.z = 9; rider.chain = .1; actionsFor(race, rider, ['hit']); run(race, 9);
+    assert.equal(rider.chain, 0); assert.equal(rider.actionChain, true); assert.equal(other.armor, 75);
+    const view = snapshot(race).riders.find(r => r.id === rider.id);
+    assert.equal(view.actionId, 1); assert.equal(view.actionDuration, .66); assert.equal(view.pendingAttack, undefined);
+});
+test('a second hit cannot shorten crash recovery', () => {
+    const { race, rider } = setup(); const other = addRider(race, 'other', 'Other', { lane: 3 });
+    other.z = 3; other.armor = 10; actionsFor(race, rider, ['hit']); run(race, 7);
+    assert.equal(other.stun, 1.6);
+    const third = addRider(race, 'third', 'Third', { lane: 4 }); third.z = 3;
+    actionsFor(race, third, ['hit']); run(race, 7);
+    assert.ok(other.stun > 1.3); assert.equal(other.crashes, 1);
 });

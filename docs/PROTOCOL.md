@@ -14,7 +14,7 @@ The same-origin web client and the packaged Android origin are accepted. Deploye
 | --- | --- |
 | GET `/api/health` | Liveness/version/room count; no session needed |
 | POST `/api/session` | Creates a bounded guest session; optional server invitation passphrase |
-| GET `/api/me` | ID, name, current room, next rider/controller sequence numbers |
+| GET `/api/me` | ID, name, current room, pairing state, next rider/controller sequence numbers |
 | GET `/api/stream` | Authenticated SSE: hello, room, state, heartbeat, pairing, command and shutdown messages |
 | POST `/api/profile` | Name, chosen FTP baseline and allowed jersey color |
 | POST `/api/rooms/create` | trackId, mode, difficulty; creates a private lobby |
@@ -59,12 +59,21 @@ The client sends fresh measurements at roughly 5 Hz and sends actions promptly w
 
 ## Event stream
 
-Each message is `data: <JSON>\n\n`. Fetch streaming is used rather than EventSource so authorization can stay in a header. `hello` includes identity, protocol and next input sequences. `room` includes code, course, mode, phase, stable race ID, host, member statuses and quick-start time. `state` includes tick, race time, phase, track objects, recent event IDs and ordered rider presentation fields. `heartbeat` is sent every ten seconds; a quiet connection is aborted and retried by the client after its watchdog threshold.
+Each message is `data: <JSON>\n\n`. Fetch streaming is used rather than EventSource so authorization can stay in a header. `hello` includes identity, protocol, pairing state and next input sequences. `room` includes code, course, mode, phase, stable race ID, host, member statuses and quick-start time. `state` includes tick, race time, phase, track objects, recent event IDs and ordered rider presentation fields. `heartbeat` is sent every ten seconds; a quiet connection is aborted and retried by the client after its watchdog threshold.
+
+Pairing state is `null` or `{ "role": "controller" | "rider", "name": "Other device's name" }`. Successful pairing sends `paired` to both devices. Reconnection repeats `paired` with `restored:true`; a refreshed phone can recover control without requesting a new code. Revocation, replacement or logout sends `unpaired` to both devices. Controller commands enforce the same spectator restrictions as direct rider input.
 
 The server steps at 30 Hz and sends snapshots at 15 Hz. Timesteps are server-controlled and catch-up is bounded. The renderer interpolates positions; it never reports authoritative outcomes back to the server. An output buffer exceeding 128 KiB causes a slow stream to close rather than accumulate indefinitely. Reconnecting replaces the prior stream and restores the original rider.
 
-Race IDs, not tick counts alone, define a new race. On a reload `/api/me` and `hello` restore the next valid sequence. Session/room state does not survive a server process restart; clients must join a new session/room afterward. There is no exactly-once replay of delayed combat across outages.
+Race IDs, not tick counts alone, define a new race. On a reload `/api/me` and `hello` restore the next valid sequence. Concurrent connect requests share a session handshake, and stopped stream loops cannot replace newer connections. A temporary session lookup failure preserves the saved session for retry; only an explicit 401 creates a new session. Session/room state does not survive a server process restart; clients must join a new session/room afterward. There is no exactly-once replay of delayed combat across outages.
 
 ## Version policy
 
 Increment protocol major when interpretation or authority fields change. A major mismatch fails with an update message rather than trying an unsafe downgrade. The app version may change without a protocol change for presentation-only fixes. Keep native telemetry schemas separate from the multiplayer contract so a new device provider does not require changing the racing protocol.
+
+
+## Combat presentation
+
+Rider snapshots include `actionId` (monotonic per rider), `action`, `actionSide`, `actionChain`, `actionDuration` and remaining `actionTimer`. Attack poses begin immediately; authority resolves contact once at 45% of the duration: punch 0.48 s, kick 0.62 s, chain 0.66 s. Equipment and attack side are fixed for the swing; reach and a valid target are checked again at contact. A new attack cannot replace an unfinished one. Coasting and crashing cancel an unfinished attack. `pendingAttack` remains server-private.
+
+`impactSide` identifies the incoming side of a hit; `impactDuration`/`impactTimer` describe localized recoil without blink or full-screen flash. Solo and network renderers interpolate presentation only; scoring and collisions remain authoritative. Network attack clocks cannot rewind when older position-buffer samples catch up.

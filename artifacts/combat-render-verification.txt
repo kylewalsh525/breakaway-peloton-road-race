@@ -1,0 +1,36 @@
+PASS: Every stunned rider stays drawn on every sampled frame, including reduced motion
+PASS: Impact leaves the sky unchanged: no full-screen damage flash
+PASS: Eight simultaneous combat animations render within a 16.7ms p95 draw budget on this desktop
+PASS: No uncaught browser errors
+[
+  {
+    "quality": "low",
+    "samples": 120,
+    "renderP50Ms": 0.5,
+    "renderP95Ms": 1,
+    "renderMaxMs": 5.899999998509884,
+    "frameP50Ms": 16.699999999999818,
+    "frameP95Ms": 16.799999999999955,
+    "spriteCacheSize": 168
+  },
+  {
+    "quality": "auto",
+    "samples": 120,
+    "renderP50Ms": 0.7999999970197678,
+    "renderP95Ms": 1.1000000014901161,
+    "renderMaxMs": 1.2000000029802322,
+    "frameP50Ms": 16.699999999999818,
+    "frameP95Ms": 16.799999999999727,
+    "spriteCacheSize": 168
+  },
+  {
+    "quality": "high",
+    "samples": 120,
+    "renderP50Ms": 0.8999999985098839,
+    "renderP95Ms": 1.1000000014901161,
+    "renderMaxMs": 1.2999999970197678,
+    "frameP50Ms": 16.699999999999818,
+    "frameP95Ms": 16.800000000000182,
+    "spriteCacheSize": 168
+  }
+]

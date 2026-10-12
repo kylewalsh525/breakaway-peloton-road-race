@@ -1,8 +1,16 @@
-# BREAKAWAY · Asphalt Arcade
+# BREAKAWAY · Road Combat
 
-**Pedal. Speak. Race.** An original arcade cycling racer with Road Rash–style combat, four procedural worlds, voice controls, solo AI racing, and an authoritative multiplayer server.
+**Pedal. Speak. Race.** A Genesis-style road-combat racer with original pixel motorcycle sprites, four courses, built-in voice commands, solo AI racing, and an authoritative multiplayer server. Your bike power drives the virtual motorcycle.
 
-![Breakaway garage](artifacts/home-desktop.png)
+![Breakaway race](artifacts/retro-race.png)
+
+## Genesis presentation rebuild
+
+The game now uses a pixel-art two-lane highway, a raised chase camera, shaded rider sprites, live rear-view mirrors, a fixed twin-gauge dashboard, segmented rider/bike meters, nearby-rival condition, and a compact arcade course menu. Solo motion interpolates between physics updates, and rider artwork is cached to keep frames light. Voice can be enabled before the start; say **“start”** to begin solo. **Quick Race** matches riders on this server; **Host Friends** creates a private room. Empty places become AI opponents.
+
+The presentation follows the original Genesis Road Rash composition using newly drawn art and the Breakaway name. Reference: [Genesis gameplay screenshots](https://www.thepixelempire.net/road-rash-smd-review.html). This is a new implementation, not an emulator or a copy of its game assets.
+
+**Current delivery boundary:** local browser play and multiplayer transport are testable here. A public HTTPS server, Android APK build, exact Peloton tablet compatibility, real power input, and real microphone recognition still require setup and physical validation. No public service has been provisioned. Voice means short built-in commands; no ChatGPT Voice Mode or AI API subscription is required.
 
 ## Status — read this first
 
@@ -14,7 +22,7 @@ The precise evidence is in [TEST_REPORT.md](docs/TEST_REPORT.md). Passing synthe
 
 ## Play immediately
 
-Open **`PLAY-SOLO.html`** at the ZIP's top level (or `dist/PLAY-SOLO.html`). This is a self-contained game, not a screenshot: choose a course, press **Ride Solo**, and race seven AI riders. Use the demo-power slider or ↑ / ↓ to pedal virtually.
+Open **`PLAY-SOLO.html`** at the ZIP's top level (or `dist/PLAY-SOLO.html`). This is a self-contained game, not a screenshot: choose a course, press **Solo Race**, and race seven AI riders. Use the demo-power slider or ↑ / ↓ to pedal virtually.
 
 The double-click build is solo only. Use the server below for multiplayer, phone pairing, and normal browser microphone permission flows.
 
@@ -34,7 +42,7 @@ The default server binds loopback only. Internet/phone use requires proper hosti
 
 ## Ride with your voice
 
-Click **Enable Voice**, read the audio-processing choice, grant microphone permission, and speak short commands:
+Click **Enable Voice Control** on the course menu (or **Enable Voice** during a race), read the audio-processing choice, grant microphone permission, and speak short commands:
 
 | Voice | Keyboard | Effect |
 | --- | --- | --- |
@@ -76,7 +84,7 @@ The debug package is `com.breakaway.race.debug`. It installs alongside Peloton; 
 | --- | --- |
 | Racing | Four tracks, deterministic fixed-step physics, power/equalized modes, drafting, lane contact, AI difficulty, countdown, finish order, DNF recovery |
 | Combat | Hits, kicks, chains, timed blocks, boosts, armor, crash recovery, repair/stamina pickups, barriers and oil |
-| Presentation | Original pseudo-3D Canvas graphics, animated riders, environment palettes, music/SFX synthesis, HUD, results, responsive layouts, reduced effects, render-quality controls |
+| Presentation | Original pixel-art Canvas road projection, animated motorcycle sprites, twin instrument gauges, rival/condition meters, music/SFX synthesis, responsive arcade menus, reduced effects, render-quality controls |
 | Multiplayer | Eight-rider rooms, quick match, private codes, spectators, host/ready rules, authenticated HTTP/SSE, reconnection, input sequencing, stable race IDs, rematches |
 | Voice | Native offline engine, optional platform/browser recognition, confidence/duplicate gates, wake prefix, command check, denial/absence handling, paired phone remote |
 | Device isolation | Validated telemetry mux, stale-data coasting, Peloton read-only V1/Bike probes and polling, browser BLE Cycling Power / FTMS decoders, diagnostics |
@@ -97,9 +105,18 @@ python scripts/test_java.py
 python -m pip install playwright==1.55.0
 python -m playwright install chromium
 npm run test:e2e
+
+# Or use the Node Playwright suites (optional playwright installation):
+# npm install --no-save playwright
+npm run test:ui
+npm run test:combat-voice   # Synthetic recognized commands → real solo actions
+npm run test:combat-render  # Combat visibility/art/performance; needs npm start
+npm run test:combat-network # Real HTTP/SSE command timing; needs npm start
+npm start                      # keep running in a separate terminal
+npm run test:multiplayer-ui
 ```
 
-`CHROMIUM_PATH` selects an existing Chromium executable. UI tests use an in-memory HTML document, synthetic native events, and an accelerated clock for the full-race case; the report labels these conditions.
+`CHROMIUM_PATH` selects an existing Chromium executable. The Node suites also accept `PLAYWRIGHT_MODULE` pointing to an already installed Playwright module and `RACE_URL` for an alternate local server. UI tests use an in-memory HTML document, synthetic native events, and an accelerated clock for the full-race case; the report labels these conditions.
 
 ## Project map
 

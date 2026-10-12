@@ -1,0 +1,306 @@
+{
+  "test": "Synthetic provider callback to real game action",
+  "passed": true,
+  "checksPassed": 43,
+  "checks": [
+    "native: voice setup chooses its provider",
+    "native: spoken start reaches the race",
+    "native: low-confidence, partial, and conversational speech do not act",
+    "native: left reaches targetLane state",
+    "native: a repeated final result cannot steer twice",
+    "native: right reaches targetLane state",
+    "native: go left reaches targetLane state",
+    "native: center reaches targetLane state",
+    "native: punch reaches attack state",
+    "native: kick reaches attack state",
+    "native: chain reaches attack state",
+    "native: swing chain reaches attack state",
+    "native: repeated combat final result cannot attack again after cooldown",
+    "native: block reaches positive state",
+    "native: boost reaches positive state",
+    "native: brake reaches positive state",
+    "native: coast reaches coast state",
+    "native: resume reaches coast state",
+    "native: 1,000 repeated partial callbacks do not trigger attacks",
+    "native: stale provider callbacks cannot steer or disable the new session",
+    "native: right reaches targetLane state",
+    "browser: voice setup chooses its provider",
+    "browser: spoken start reaches the race",
+    "browser: low-confidence, partial, and conversational speech do not act",
+    "browser: left reaches targetLane state",
+    "browser: a repeated final result cannot steer twice",
+    "browser: right reaches targetLane state",
+    "browser: go left reaches targetLane state",
+    "browser: center reaches targetLane state",
+    "browser: punch reaches attack state",
+    "browser: kick reaches attack state",
+    "browser: chain reaches attack state",
+    "browser: swing chain reaches attack state",
+    "browser: repeated combat final result cannot attack again after cooldown",
+    "browser: block reaches positive state",
+    "browser: boost reaches positive state",
+    "browser: brake reaches positive state",
+    "browser: coast reaches coast state",
+    "browser: resume reaches coast state",
+    "browser: 1,000 repeated partial callbacks do not trigger attacks",
+    "browser: stale provider callbacks cannot steer or disable the new session",
+    "browser: right reaches targetLane state",
+    "No uncaught browser JavaScript errors"
+  ],
+  "elapsedSeconds": 25.02,
+  "uncaughtErrors": [],
+  "latency": [
+    {
+      "backend": "native",
+      "text": "left",
+      "callbackToActionMs": 11.299999997019768,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "native",
+      "text": "right",
+      "callbackToActionMs": 3.6999999955296516,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "native",
+      "text": "go left",
+      "callbackToActionMs": 30.400000005960464,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "native",
+      "text": "center",
+      "callbackToActionMs": 29.399999998509884,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "native",
+      "text": "punch",
+      "callbackToActionMs": 29.799999997019768,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 1
+    },
+    {
+      "backend": "native",
+      "text": "kick",
+      "callbackToActionMs": 25.600000001490116,
+      "simulationTicks": 1,
+      "action": "kick",
+      "actionId": 2
+    },
+    {
+      "backend": "native",
+      "text": "chain",
+      "callbackToActionMs": 22.899999998509884,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 3
+    },
+    {
+      "backend": "native",
+      "text": "swing chain",
+      "callbackToActionMs": 24.599999994039536,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "block",
+      "callbackToActionMs": 4,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "boost",
+      "callbackToActionMs": 33.29999999701977,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "brake",
+      "callbackToActionMs": 29.099999994039536,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "coast",
+      "callbackToActionMs": 31.19999999552965,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "resume",
+      "callbackToActionMs": 29.200000002980232,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "native",
+      "text": "right",
+      "callbackToActionMs": 30.19999999552965,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "left",
+      "callbackToActionMs": 28.900000005960464,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "browser",
+      "text": "right",
+      "callbackToActionMs": 4.600000001490116,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "browser",
+      "text": "go left",
+      "callbackToActionMs": 30.399999998509884,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "browser",
+      "text": "center",
+      "callbackToActionMs": 29.900000005960464,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 0
+    },
+    {
+      "backend": "browser",
+      "text": "punch",
+      "callbackToActionMs": 27.799999997019768,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 1
+    },
+    {
+      "backend": "browser",
+      "text": "kick",
+      "callbackToActionMs": 27.30000000447035,
+      "simulationTicks": 1,
+      "action": "kick",
+      "actionId": 2
+    },
+    {
+      "backend": "browser",
+      "text": "chain",
+      "callbackToActionMs": 26.100000001490116,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 3
+    },
+    {
+      "backend": "browser",
+      "text": "swing chain",
+      "callbackToActionMs": 22.899999998509884,
+      "simulationTicks": 1,
+      "action": "hit",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "block",
+      "callbackToActionMs": 33.100000001490116,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "boost",
+      "callbackToActionMs": 29.799999997019768,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "brake",
+      "callbackToActionMs": 30.700000002980232,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "coast",
+      "callbackToActionMs": 28.5,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "resume",
+      "callbackToActionMs": 31.69999999552965,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    },
+    {
+      "backend": "browser",
+      "text": "right",
+      "callbackToActionMs": 18.899999998509884,
+      "simulationTicks": 1,
+      "action": "",
+      "actionId": 4
+    }
+  ],
+  "throughput": [
+    {
+      "backend": "native",
+      "callbacks": 1000,
+      "elapsedMs": 1.1999999955296516,
+      "beforeAction": 4,
+      "afterAction": 4
+    },
+    {
+      "backend": "browser",
+      "callbacks": 1000,
+      "elapsedMs": 3.399999998509884,
+      "beforeAction": 4,
+      "afterAction": 4
+    }
+  ],
+  "callbackToSimulation": {
+    "samples": 28,
+    "medianMs": 28.9,
+    "p95Ms": 33.1,
+    "maxMs": 33.29999999701977
+  },
+  "limitations": [
+    "Synthetic browser/native provider callbacks; no audio was recognized.",
+    "Numbers measure local callback-to-simulation response, excluding acoustic recognition, microphone capture, Android bridging, and multiplayer transport.",
+    "Android Java was not compiled or run in this environment.",
+    "Saying chain uses the current attack; a chain pickup is required for the equipped-chain animation."
+  ]
+}

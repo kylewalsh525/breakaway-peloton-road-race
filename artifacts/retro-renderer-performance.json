@@ -1,0 +1,55 @@
+{
+  "rendererOnly": true,
+  "measurement": "180 warm requestAnimationFrame samples per quality; local desktop Chrome",
+  "physicalPelotonTested": false,
+  "summaries": [
+    {
+      "quality": "low",
+      "width": 640,
+      "height": 289,
+      "frames": 180,
+      "meanMs": 0.695,
+      "medianMs": 0.5999999940395355,
+      "p95Ms": 1.5,
+      "maxMs": 3.5,
+      "cachedPoses": 10
+    },
+    {
+      "quality": "auto",
+      "width": 960,
+      "height": 433,
+      "frames": 180,
+      "meanMs": 0.842,
+      "medianMs": 0.7999999970197678,
+      "p95Ms": 1.3000000044703484,
+      "maxMs": 2.100000001490116,
+      "cachedPoses": 11
+    },
+    {
+      "quality": "high",
+      "width": 1280,
+      "height": 578,
+      "frames": 180,
+      "meanMs": 0.891,
+      "medianMs": 0.8999999985098839,
+      "p95Ms": 1.3999999985098839,
+      "maxMs": 1.6000000014901161,
+      "cachedPoses": 12
+    }
+  ],
+  "checks": {
+    "playerGroundAtViewportFraction": 0.785,
+    "playerHeightFraction": 0.323,
+    "visibleTrailingRiderDrawsAfterPlayer": true,
+    "mirrorFindsTrailingRider": true
+  },
+  "rearTraffic": [
+    {
+      "id": "r4",
+      "distance": 5,
+      "closing": true,
+      "side": "right"
+    }
+  ],
+  "errors": []
+}

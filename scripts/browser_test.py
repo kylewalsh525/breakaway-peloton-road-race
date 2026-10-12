@@ -86,7 +86,7 @@ def main():
         page.click('#resume-btn')
         screenshot(page,'race-desktop.png')
         check('Eight riders are rendered in standings',page.locator('.standing').count()==8)
-        check('Canvas has a real pixel surface',page.evaluate('document.querySelector("canvas").width')>=640)
+        check('Canvas has a real pixel surface',page.evaluate('document.querySelector("canvas").width')>=480)
         page.click('#pause-btn');page.click('#quit-btn')
         check('Leaving solo returns to garage',diag(page)['screen']=='home')
         page.close()

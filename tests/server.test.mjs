@@ -135,3 +135,153 @@ test('page reload resumes the original rider with the next accepted input sequen
 test('invalid sensor traffic cannot renew the previous sample on the server', async (t) => { let now = 0; const { app, request, session } = await fixture(t, { clock: () => now }); const a = await session(); const room = (await request('/api/rooms/create', { trackId: 'coast' }, a.token)).data.room; await request('/api/rooms/ready', {}, a.token); await request('/api/rooms/start', {}, a.token); await request('/api/input', { seq: 1, actions: [], telemetry }, a.token); now = 3000; assert.equal((await request('/api/input', { seq: 2, actions: [], telemetry: { ...telemetry, watts: 'bad' } }, a.token)).status, 400); app.tick(); const rider = app.rooms.get(room.code).race.riders.find(r => r.id === a.id); assert.equal(rider.stale, true); assert.equal(rider.watts, 0); });
 test('result journal repairs a torn tail before the next append',async t=>{const dir=await mkdtemp(join(tmpdir(),'breakaway-torn-'));t.after(()=>rm(dir,{recursive:true,force:true}));const a=new ResultStore(dir);await a.load();a.append({name:'First'});await a.queue;await appendFile(join(dir,'results.jsonl'),'BROKEN');const b=new ResultStore(dir);await b.load();b.append({name:'Second'});await b.queue;const c=new ResultStore(dir);await c.load();assert.deepEqual(c.results.map(r=>r.name),['First','Second']);});
 test('result journal compaction preserves ordered bounded history',async t=>{const dir=await mkdtemp(join(tmpdir(),'breakaway-compact-'));t.after(()=>rm(dir,{recursive:true,force:true}));const s=new ResultStore(dir);await s.load();s.entries=5999;for(let i=0;i<20;i++)s.append({name:String(i)});await s.queue;const reload=new ResultStore(dir);await reload.load();assert.deepEqual(reload.results.map(r=>r.name),Array.from({length:20},(_,i)=>String(i)));});
+
+test('phone pairing survives reconnect on both devices and revocation updates both streams', async t => {
+    const { base, request, session } = await fixture(t);
+    const rider = await session('Bike rider'), phone = await session('Phone mic');
+    const bikeStream = await stream(base, rider.token), phoneStream = await stream(base, phone.token);
+    t.after(() => Promise.all([bikeStream.close(), phoneStream.close()]));
+    const room = (await request('/api/rooms/create', { trackId: 'coast' }, rider.token)).data.room;
+    const code = (await request('/api/pair/create', {}, rider.token)).data.code;
+    await request('/api/pair/claim', { code }, phone.token);
+    assert.equal((await bikeStream.wait(x => x.kind === 'paired')).role, 'rider');
+    assert.equal((await phoneStream.wait(x => x.kind === 'paired')).role, 'controller');
+    await request('/api/control', { command: 'ready', seq: 9 }, phone.token);
+    await phoneStream.close();
+    const resumed = await stream(base, phone.token);
+    t.after(() => resumed.close());
+    const hello = await resumed.wait(x => x.kind === 'hello');
+    assert.deepEqual(hello.pairing, { role: 'controller', name: 'Bike rider' });
+    assert.equal(hello.nextControlSeq, 10);
+    assert.equal((await resumed.wait(x => x.kind === 'paired')).restored, true);
+    const me = (await request('/api/me', undefined, rider.token, 'GET')).data;
+    assert.deepEqual(me.pairing, { role: 'rider', name: 'Phone mic' });
+    assert.equal(me.room.code, room.code);
+    await request('/api/pair/revoke', {}, phone.token);
+    await bikeStream.wait(x => x.kind === 'unpaired');
+    await resumed.wait(x => x.kind === 'unpaired');
+    assert.equal((await request('/api/control', { command: 'start', seq: 10 }, phone.token)).status, 403);
+});
+
+test('phone control preserves spectator permissions and exact pairing expiry', async t => {
+    let now = 0;
+    const { request, session } = await fixture(t, { clock: () => now });
+    const host = await session('Host'), spectator = await session('Spectator'), phone = await session('Phone');
+    const room = (await request('/api/rooms/create', { trackId: 'coast' }, host.token)).data.room;
+    await request('/api/rooms/join', { code: room.code, spectator: true }, spectator.token);
+    let code = (await request('/api/pair/create', {}, spectator.token)).data.code;
+    await request('/api/pair/claim', { code }, phone.token);
+    assert.equal((await request('/api/control', { command: 'ready', seq: 0 }, phone.token)).status, 403);
+    assert.equal((await request('/api/control', { command: 'left', seq: 1 }, phone.token)).status, 403);
+    code = (await request('/api/pair/create', {}, host.token)).data.code;
+    now = 120000;
+    assert.equal((await request('/api/pair/claim', { code }, phone.token)).status, 404);
+});
+
+async function until(predicate) {
+    const deadline = Date.now() + 3000;
+    while (!predicate()) {
+        if (Date.now() >= deadline)
+            throw new Error('Timed out waiting for network state');
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+}
+function memorySessionStorage() {
+    const values = new Map();
+    globalThis.sessionStorage = { getItem: key => values.get(key) || null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+}
+test('concurrent joins and rapid reconnects keep one session and one stable event stream', async t => {
+    const { base, app } = await fixture(t);
+    memorySessionStorage();
+    const client = new RaceNetwork({ base });
+    t.after(() => client.stop());
+    let greetings = 0;
+    client.addEventListener('hello', () => greetings++);
+    await Promise.all([client.connect('Rider'), client.connect('Rider'), client.connect('Rider')]);
+    await until(() => greetings === 1);
+    assert.equal(app.sessions.size, 1);
+    const id = client.id;
+    for (let i = 0; i < 3; i++) {
+        client.stop();
+        await client.connect('Rider');
+        await until(() => greetings === i + 2);
+    }
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    assert.equal(client.id, id);
+    assert.equal(app.sessions.size, 1);
+    assert.equal(client.connected, true);
+    assert.equal(greetings, 4, 'Stopped loops must not reconnect and replace the current stream');
+    await client.logout();
+});
+
+test('temporary session lookup failure retains the original room instead of creating a second rider', async t => {
+    const { base, app } = await fixture(t);
+    memorySessionStorage();
+    const original = new RaceNetwork({ base });
+    t.after(() => original.stop());
+    await original.connect('Original');
+    const room = (await original.request('/api/rooms/create', { trackId: 'coast' })).room;
+    original.stop();
+    const resumed = new RaceNetwork({ base });
+    t.after(() => resumed.stop());
+    const request = resumed.request.bind(resumed);
+    let failed = false;
+    resumed.request = (...args) => {
+        if (!failed && args[0] === '/api/me') {
+            failed = true;
+            return Promise.reject(new Error('Temporary network outage'));
+        }
+        return request(...args);
+    };
+    await assert.rejects(resumed.connect('Duplicate'), /Temporary network outage/);
+    assert.equal(app.sessions.size, 1);
+    await resumed.connect('Duplicate');
+    assert.equal(resumed.id, original.id);
+    assert.equal((await resumed.request('/api/me', undefined, 'GET')).room.code, room.code);
+    assert.equal(app.rooms.get(room.code).members.size, 1);
+    await resumed.logout();
+});
+
+test('two remote riders share race results and a fresh rematch with the same room', async t => {
+    let now = 0;
+    const { app, base, request, session } = await fixture(t, { clock: () => now, raceLength: 25 });
+    const a = await session('Peloton A'), b = await session('Peloton B');
+    const first = await stream(base, a.token), second = await stream(base, b.token);
+    t.after(() => Promise.all([first.close(), second.close()]));
+    const room = (await request('/api/rooms/create', { trackId: 'coast' }, a.token)).data.room;
+    await request('/api/rooms/join', { code: room.code.toLowerCase() }, b.token);
+    await request('/api/rooms/ready', {}, a.token);
+    await request('/api/rooms/ready', {}, b.token);
+    await request('/api/rooms/start', {}, a.token);
+    const initial = (await second.wait(x => x.kind === 'state')).state;
+    for (let seq = 0; seq < 140; seq++) {
+        await Promise.all([
+            request('/api/input', { seq, actions: [], telemetry }, a.token),
+            request('/api/input', { seq, actions: [], telemetry: { ...telemetry, watts: 280 } }, b.token)
+        ]);
+        now += 100;
+        app.tick();
+    }
+    const endA = (await first.wait(x => x.kind === 'state' && x.state.phase === 'finished')).state;
+    const endB = (await second.wait(x => x.kind === 'state' && x.state.phase === 'finished')).state;
+    assert.equal(endA.id, initial.id);
+    assert.equal(endB.id, initial.id);
+    assert.deepEqual(endA.riders.map(r => [r.id, r.rank, r.finishedAt]), endB.riders.map(r => [r.id, r.rank, r.finishedAt]));
+    for (const player of [a, b]) {
+        const rider = endA.riders.find(r => r.id === player.id);
+        assert.equal(rider.dnf, false);
+        assert.ok(rider.finishedAt > 0);
+    }
+    assert.equal((await request('/api/rooms/rematch', {}, b.token)).status, 403);
+    const rematch = (await request('/api/rooms/rematch', {}, a.token)).data.room;
+    assert.equal(rematch.code, room.code);
+    assert.equal(rematch.raceId, null);
+    assert.ok(rematch.riders.every(r => !r.ready));
+    await request('/api/rooms/ready', {}, a.token);
+    await request('/api/rooms/ready', {}, b.token);
+    await request('/api/rooms/start', {}, a.token);
+    const next = (await second.wait(x => x.kind === 'state' && x.state.id !== initial.id)).state;
+    assert.equal(next.phase, 'countdown');
+    assert.equal(next.riders.filter(r => !r.bot).length, 2);
+    assert.equal(app.rooms.size, 1);
+});

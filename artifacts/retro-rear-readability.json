@@ -1,0 +1,20 @@
+{
+  "main": [
+    "ahead",
+    "player",
+    "side-rear"
+  ],
+  "mirrors": [
+    "center-rear",
+    "center-rear",
+    "side-rear"
+  ],
+  "checks": {
+    "playerVisible": true,
+    "centerRearDoesNotObscurePlayer": true,
+    "sideRearVisible": true,
+    "centerRearInMirrors": true,
+    "sideRearInMirrors": true,
+    "sideDepthSorted": true
+  }
+}

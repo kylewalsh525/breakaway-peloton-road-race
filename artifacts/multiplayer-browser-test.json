@@ -1,0 +1,36 @@
+{
+  "test": "Rendered multiplayer room, telemetry, phone voice and reconnect integration",
+  "passed": true,
+  "base": "http://127.0.0.1:8787",
+  "roomCode": "R2DKBQ",
+  "checksPassed": 19,
+  "elapsedSeconds": 14.65,
+  "checks": [
+    "Separate rider browser contexts boot with synthetic live bike telemetry",
+    "Host creates a private room with a shareable code",
+    "Two named riders share one lobby",
+    "Guest cannot start the host race",
+    "Phone companion pairs through the rendered code form",
+    "Both riders reach the race HUD in the same live room",
+    "Authoritative HUD power matches each independent bike fixture",
+    "Both clients display live multiplayer and eight-rider standings",
+    "Synthetic native voice requires no online speech consent",
+    "Voice starts on the synthetic offline bridge",
+    "Phone voice controls only its paired rider on the real server",
+    "Synthetic phone voice steers the authoritative multiplayer rider",
+    "Duplicate final voice result is not replayed on the server",
+    "Reloading the phone restores pairing without a new code",
+    "Restored phone sequence accepts the next real control command",
+    "Reload/rejoin retains rider identity and immediately accepted power input",
+    "Leaving removes the guest and does not reopen the race HUD",
+    "A failed leave POST still stops the race stream and stays home",
+    "No uncaught JavaScript errors across rider and phone contexts"
+  ],
+  "uncaughtErrors": [],
+  "failure": null,
+  "limitations": [
+    "Real Chromium contexts and the actual HTTP/SSE server were used.",
+    "Peloton telemetry and native speech results were synthetic fixtures; no physical bike or microphone was used.",
+    "This does not certify Android installation, real speech recognition, remote HTTPS hosting, or internet latency."
+  ]
+}

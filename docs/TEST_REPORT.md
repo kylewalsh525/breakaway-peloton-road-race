@@ -1,3 +1,48 @@
+# Combat and voice polish verification — 2026-10-11
+
+This pass replaces blinking damage feedback with continuous rider rendering, directional recoil and 16-phase punch, kick and chain animations. Damage resolves once at the contact pose. The timings below were measured in local desktop Chrome and are not acoustic or Peloton hardware measurements.
+
+| Check | Observed result | Evidence |
+| --- | --- | --- |
+| Syntax, simulation, voice, network and HTTP/SSE tests | 185 passed; no failed or skipped tests; playable assets generated | `artifacts/combat-verification.txt` |
+| Full rendered UI and complete solo race regression | 55 checks passed; zero uncaught errors | `artifacts/retro-browser-test.json`, `artifacts/combat-ui-verification.txt` |
+| Browser and native provider callback fixtures through the real solo app | 43 checks passed, 28 timing samples: 28.9 ms median, 33.1 ms p95, 33.3 ms maximum | `artifacts/combat-voice-browser-test.json` |
+| Recognized command fixture through real multiplayer HTTP/SSE | 8 checks passed; 7 samples: 30.3 ms median, 65.1 ms p95 | `artifacts/combat-network-test.json` |
+| Combat rendering and visibility | Every stunned rider drawn across 120 sampled frames; no full-screen flash; 8 combatants at approximately 60 FPS | `artifacts/combat-render-test.json` |
+| Attack direction, art bounds and phase stability | 576 pose combinations; no clipped sprites; same attack timer yields same pose regardless of wall clock; cache bounded at 192 | `artifacts/combat-bounds-checks.json`, `artifacts/combat-poses.png` |
+
+Warmed rendering sampled 120 frames per quality: draw p95 was 1.0 ms low, 1.1 ms classic/auto and 1.1 ms high. These are draw costs, not whole-game input latency or a target-tablet guarantee. Solo callback timing excludes audio capture and speech recognition. Multiplayer timing includes the real local server and SSE but excludes the 95 ms position presentation buffer. Slow-POST and failed-POST tests verified that old queued attacks were discarded instead of firing late.
+
+Voice checks cover punch/kick/chain aliases, steering/center, block, boost, brake, coast/resume, start, duplicate results after cooldown, stale sessions, confidence/interim rejection and 1,000 repeated partial callbacks per provider. Native Java vocabulary is checked against the shared aliases. Android Java changes were not compiled or run; no physical microphone, actual speech recognition, Peloton, remote network or public deployment was tested. Those remaining checks require the target device and microphone environment.
+
+Reproduce after `npm run build` and with Playwright/Chrome available:
+
+```sh
+npm run verify
+npm run test:ui
+# Start npm start for the render/network checks:
+npm run test:combat-render
+npm run test:combat-voice
+npm run test:combat-network
+```
+
+---
+
+# Current rebuild verification — 2026-10-11
+
+The Genesis presentation rebuild was tested on local macOS with installed Google Chrome. This section supersedes presentation/browser counts below; the September report is retained as historical evidence.
+
+| Check | Observed result | Evidence |
+| --- | --- | --- |
+| Syntax, unit tests, simulation and real HTTP/SSE integration | 162 tests passed; build generated web, standalone and Android web assets | `artifacts/retro-verification.txt` |
+| Rendered UI, synthetic native voice and complete solo race | 55 checks passed; zero uncaught JavaScript errors | `artifacts/retro-browser-test.json` |
+| Separate browser contexts for two riders and paired phone | 19 checks passed; zero uncaught JavaScript errors | `artifacts/multiplayer-browser-test.json` |
+| Renderer camera/depth/mirror checks and warmed rendering | Camera and trailing-rider checks passed; six rear-readability checks passed; auto-quality render p95 1.3 ms in this desktop sample | `artifacts/retro-renderer-performance.json`, `artifacts/retro-rear-readability.json` |
+
+UI checks cover 1440×900, 1920×1080, 1024×600 and 390×844. Built-in commands were exercised through synthetic native speech results; bike frames were synthetic. The full solo finish uses an accelerated test clock. Real browser/server transport was exercised, but no physical Peloton, microphone recognition, Android APK, public hosting or internet latency was validated. Renderer timings measure draw cost, not end-to-end speech latency. Solo poses now interpolate between fixed simulation ticks; simulation authority and multiplayer buffering remain intact.
+
+---
+
 # Executed test report — source delivery 0.9.0
 
 Delivery verification date: **2026-09-30**. This report distinguishes executed tests from supplied but unexecuted test/build configuration. Original source and generated playable assets are included in the ZIP.

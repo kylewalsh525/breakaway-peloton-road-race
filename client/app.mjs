@@ -2,6 +2,7 @@ import { VERSION, PROTOCOL, clamp, ordinal } from '../shared/protocol.mjs';
 import { TRACKS, getTrack } from '../shared/tracks.mjs';
 import { createRace, addRider, fillBots, applyInput, stepRace, snapshot, COLORS } from '../shared/simulation.mjs';
 import { awardRace, levelFor, ACHIEVEMENTS } from '../shared/profile.mjs';
+import { interpolateRace } from './motion.mjs';
 import { RoadRenderer } from './renderer.mjs';
 import { ArcadeAudio } from './audio.mjs';
 import { VoiceController } from './speech.mjs';
@@ -13,7 +14,9 @@ const defaults = { name: 'Rider', track: 'coast', mode: 'arcade', difficulty: 'n
 const settings = { ...defaults, ...load('settings', {}) };
 if (!TRACKS.some(t => t.id === settings.track))
     settings.track = 'coast';
+if (!COLORS.includes(settings.jersey)) settings.jersey = COLORS[0];
 let profile = loadProfile(), accessCode = '', screen = 'home', mode = 'practice', room = null, race = null, playerId = 'local', raceId = '', latest = null, result = null, paused = false;
+let previousRaceView = null;
 let seq = 0, pending = [], inputBusy = false, lastTelemetrySent = 0, lastFrame = performance.now(), accumulator = 0, lastHud = 0, lastEvent = 0, lastCountdown = null, alertUntil = 0, savedResult = false;
 let gamepadLast = [], network = null, paired = false, lastSource = 'demo', lastSensorMessage = 'Demo power — not a physical bike', lastSensorToast = '';
 const renderer = new RoadRenderer($('world')), audio = new ArcadeAudio(), voice = new VoiceController(), bike = new BikeController(), buffer = new SnapshotBuffer();
@@ -25,13 +28,14 @@ $('rider-name').value = settings.name;
 const companion = location.pathname === '/companion';
 function persist() { settings.name = $('rider-name').value.trim() || 'Rider'; save('settings', settings); }
 function show(next) { screen = next; for (const id of ['home', 'lobby', 'hud', 'results', 'companion'])
-    $(id).classList.toggle('hidden', id !== next); document.body.classList.toggle('racing', next === 'hud'); $('home-shade').classList.toggle('hidden', next === 'hud'); if (next === 'hud')
+    $(id).classList.toggle('hidden', id !== next); document.body.classList.toggle('racing', next === 'hud'); document.body.dataset.screen = next; $('home-shade').classList.toggle('hidden', next === 'hud'); if (next === 'hud')
     audio.startMusic();
 else
     audio.stopMusic(); }
 function renderTracks() {
-    $('track-list').innerHTML = TRACKS.map((t, i) => `<button class="track ${t.id === settings.track ? 'selected' : ''}" data-track="${t.id}" style="--track-color:${t.accent}" aria-pressed="${t.id === settings.track}"><span class="track-number">0${i + 1}</span><span><strong>${t.name}</strong><small>${t.difficulty} / ${(t.length / 1000).toFixed(1)} km</small></span><span class="track-check">${t.id === settings.track ? '●' : '↗'}</span></button>`).join('');
+    $('track-list').innerHTML = TRACKS.map((t, i) => `<button class="track ${t.id === settings.track ? 'selected' : ''}" data-track="${t.id}" style="--track-color:${t.accent}" aria-pressed="${t.id === settings.track}"><span class="track-number">0${i + 1}</span><span><strong>${t.name}</strong><small>${t.difficulty} / ${(t.length / 1000).toFixed(1)} km</small></span><span class="track-check">${t.id === settings.track ? '◀' : ''}</span></button>`).join('');
     const t = getTrack(settings.track);
+    $('track-title').textContent = t.name.toUpperCase();
     $('track-distance').textContent = `${(t.length / 1000).toFixed(1)} KM · ${t.region}`;
     for (const el of $('track-list').querySelectorAll('button'))
         el.onclick = () => { settings.track = el.dataset.track; persist(); renderTracks(); };
@@ -66,6 +70,8 @@ function startPractice() {
     lastCountdown = null;
     buffer.clear();
     latest = snapshot(race);
+    previousRaceView = latest;
+    accumulator = 0;
     show('hud');
     enableSound();
     $('demo-control').classList.toggle('hidden', bike.mode !== 'demo');
@@ -95,19 +101,32 @@ async function ensureNetwork() {
     }
     if (!network) {
         network = new RaceNetwork({ base, storageKey: companion ? 'breakaway.remote.session' : 'breakaway.session' });
+        const connection = network;
         network.addEventListener('hello', e => { seq = Math.max(seq, companion ? e.detail.nextControlSeq || 0 : e.detail.nextInputSeq || 0); });
-        network.addEventListener('room', e => onRoom(e.detail.room));
-        network.addEventListener('state', e => onState(e.detail.state));
+        network.addEventListener('room', e => { if (network === connection) onRoom(e.detail.room); });
+        network.addEventListener('state', e => { if (network === connection) onState(e.detail.state); });
         network.addEventListener('connection', e => {
             const on = e.detail.connected;
             $('network-status').textContent = on ? 'LIVE MULTIPLAYER' : 'RECONNECTING · POWER WILL COAST';
             $('network-status').classList.toggle('warning', !on);
-            if (!on && mode === 'online' && screen === 'hud')
+            if (!on && mode === 'online' && screen === 'hud') {
+                pending = [];
                 alertRace('CONNECTION LOST', 2);
+            }
         });
         network.addEventListener('command', e => { flashAction(e.detail.command); if (mode === 'online' && e.detail.command === 'resume')
             closeModal(); });
-        network.addEventListener('paired', () => { paired = true; toast('Phone controller paired. Keep it within microphone range.'); });
+        network.addEventListener('paired', e => {
+            paired = true;
+            if (e.detail.role === 'controller') $('pair-status').textContent = `Paired to ${e.detail.name}. Voice and controls are ready.`;
+            else if (!e.detail.restored) toast('Phone controller paired. Keep it within microphone range.');
+        });
+        network.addEventListener('expired', e => {
+            network?.stop(); network = null; paired = false; room = null; latest = null; pending = [];
+            if (companion) $('pair-status').textContent = 'Session expired. Enter a fresh pairing code.';
+            else { mode = 'practice'; show('home'); }
+            toast(e.detail.message || 'Session expired. Join a room again.', 7000);
+        });
         network.addEventListener('unpaired', () => { paired = false; $('pair-status').textContent = 'Controller unpaired. Enter a new pairing code.'; });
         network.addEventListener('shutdown', () => toast('The race server is restarting. Reconnection will be attempted.', 7000));
     }
@@ -124,7 +143,7 @@ async function enterOnline(action, body) {
         mode = 'online';
         race = null;
         buffer.clear();
-        seq = 0;
+        seq = Math.max(seq, n.nextInputSeq || 0);
         pending = [];
         const reply = await n.request(`/api/rooms/${action}`, body);
         onRoom(reply.room);
@@ -151,7 +170,8 @@ function onRoom(newRoom) {
         latest = null;
         show('lobby');
     }
-    $('lobby-title').textContent = room.quick ? 'Find your next rival.' : 'Your crew. Your road.';
+    if (screen === 'results') $('again-btn').disabled = room.hostId !== playerId;
+    $('lobby-title').textContent = room.quick ? 'FINDING YOUR RIVALS' : 'ASSEMBLE YOUR CREW';
     $('lobby-course').textContent = `${getTrack(room.trackId).name} · ${room.mode === 'equalized' ? 'Baseline equalized (self-reported)' : 'Absolute power'} · Up to 8 riders`;
     $('copy-room').textContent = room.code;
     $('lobby-riders').innerHTML = room.riders.map(r => `<div class="lobby-row"><span class="avatar">${esc(r.name.slice(0, 1).toUpperCase())}</span><span>${esc(r.name)}${r.id === playerId ? ' (you)' : ''}${r.id === room.hostId ? ' · host' : ''}</span><span class="state">${r.spectator ? 'WATCHING' : r.ready ? 'READY' : 'GETTING SET'}</span></div>`).join('');
@@ -184,6 +204,10 @@ function onState(state) {
     if (state.phase === 'finished' && !savedResult)
         finish(state);
 }
+function takeActions(now) {
+    // A delayed connection must not fire an old spoken attack after the rider has moved on.
+    return pending.splice(0, 6).filter(item => now - item.at <= 450).map(item => item.action);
+}
 async function sendNetwork(force = false) {
     if (mode !== 'online' || !network || !room || inputBusy || screen !== 'hud' || room.riders.find(r => r.id === playerId)?.spectator)
         return;
@@ -192,13 +216,14 @@ async function sendNetwork(force = false) {
         return;
     inputBusy = true;
     lastTelemetrySent = now;
-    const actions = pending.splice(0, 6), telemetry = bike.read();
+    const actions = takeActions(now), telemetry = bike.read();
     try {
         await network.request('/api/input', { seq: seq++, actions, telemetry: { watts: telemetry.watts, cadence: telemetry.cadence, resistance: telemetry.resistance, source: telemetry.source, stale: telemetry.stale } }, 'POST', 2500);
     }
-    catch { /* Never replay an old voice attack after reconnect. The next packet sends fresh power only. */ }
+    catch { pending = []; /* Failed transport discards queued commands; never replay old attacks. */ }
     finally {
         inputBusy = false;
+        if (pending.length) sendNetwork(true);
     }
 }
 async function command(action) {
@@ -237,7 +262,8 @@ async function command(action) {
         paused = false;
         closeModal();
     }
-    pending.push(action);
+    if (paused && !['coast', 'resume'].includes(action)) return;
+    pending.push({ action, at: performance.now() });
     if (pending.length > 6)
         pending.shift();
     flashAction(action);
@@ -256,7 +282,7 @@ function processEvents(state) {
         if (mine || target || event.type === 'start')
             audio.effect(event.type);
         if (event.type === 'hit' && mine)
-            alertRace(`${event.action === 'kick' ? 'KICK' : 'HIT'} +${event.damage}`);
+            alertRace(`${event.action === 'kick' ? 'KICK' : event.chain ? 'CHAIN' : 'HIT'} +${event.damage}`);
         if ((event.type === 'hit' && target) || (mine && ['crash', 'obstacle'].includes(event.type))) {
             renderer.impact(event.type === 'crash' ? 1.7 : 1);
             alertRace(event.type === 'crash' ? 'WIPEOUT!' : 'TAKE IT BACK');
@@ -267,7 +293,7 @@ function processEvents(state) {
             alertRace('PERFECT BLOCK');
         if(mine && event.type==='finish') alertRace('FINISHED · WAITING FOR RIVALS',5);
         if (mine && event.type === 'boost')
-            alertRace('FULL SEND');
+            alertRace('BOOST!');
     }
 }
 function updateHud(state) {
@@ -279,6 +305,14 @@ function updateHud(state) {
     if (watching)
         $('network-status').textContent = 'SPECTATING · RACE LEADER';
     const sample = bike.read();
+    $('hud-rider-name').textContent = r.name;
+    $('distance-left').textContent = `${Math.max(0, (state.length - r.z) / 1000).toFixed(1)} KM TO GO`;
+    $('speed-needle').style.transform = `rotate(${-120 + clamp(r.speed * 3.6 / 100, 0, 1) * 240}deg)`;
+    $('power-needle').style.transform = `rotate(${-120 + clamp(r.watts / 500, 0, 1) * 240}deg)`;
+    const rival = state.riders.filter(x => x.id !== r.id && !x.dnf).sort((a,b) => Math.abs(a.z-r.z)-Math.abs(b.z-r.z))[0];
+    $('rival-name').textContent = rival ? `${rival.name}${rival.bot ? ' / AI' : ''}` : 'CLEAR ROAD';
+    $('rival-gap').textContent = rival ? `${rival.z >= r.z ? '+' : '−'}${Math.round(Math.abs(rival.z-r.z))}M` : '—';
+    $('rival-fill').style.width = `${rival?.armor || 0}%`;
     $('watts').textContent = Math.round(r.watts);
     $('cadence').textContent = Math.round(r.cadence);
     $('speed').textContent = Math.round(r.speed * 3.6);
@@ -286,10 +320,15 @@ function updateHud(state) {
     $('race-label').textContent = getTrack(state.trackId).name.toUpperCase();
     $('race-time').textContent = timeLabel(state.elapsed);
     $('progress-fill').style.width = `${clamp(r.z / state.length * 100, 0, 100)}%`;
+    const coastAction = r.coast ? 'resume' : 'coast';
+    if ($('coast-toggle').dataset.action !== coastAction) {
+        $('coast-toggle').dataset.action = coastAction;
+        $('coast-toggle').innerHTML = r.coast ? '<kbd>R</kbd> RESUME' : '<kbd>C</kbd> COAST';
+    }
     $('energy-fill').style.width = `${r.energy}%`;
     $('armor-fill').style.width = `${r.armor}%`;
-    $('equipment').textContent = r.chain > 0 ? `CHAIN · ${Math.ceil(r.chain)}s` : r.coast ? 'COASTING · R TO RESUME' : 'BARE KNUCKLES';
-    $('sensor-status').textContent = r.stale ? 'SENSOR LOST · COASTING' : r.source === 'demo' ? 'DEMO POWER · NOT BIKE DATA' : r.source.toUpperCase();
+    $('equipment').textContent = r.chain > 0 ? `CHAIN · ${Math.ceil(r.chain)}s` : r.coast ? 'COASTING · SAY “RESUME”' : 'BARE KNUCKLES';
+    $('sensor-status').textContent = r.stale ? 'SENSOR LOST · COASTING' : r.source === 'demo' ? 'DEMO POWER · SIMULATED' : r.source.toUpperCase();
     $('sensor-status').classList.toggle('error', r.stale);
     $('sensor-status').classList.toggle('warning', r.source === 'demo');
     $('fps').classList.toggle('hidden', !settings.showFps);
@@ -306,7 +345,6 @@ function updateHud(state) {
     $('draft-label').classList.toggle('hidden', !r.draft || r.coast);
     if (performance.now() > alertUntil)
         $('race-alert').textContent = '';
-    processEvents(state);
     if (r.stale && bike.mode !== 'demo' && lastSensorToast !== lastSensorMessage) {
         lastSensorToast = lastSensorMessage;
         toast(lastSensorMessage, 6000);
@@ -326,18 +364,19 @@ function finish(state) {
     $('result-summary').innerHTML = [['RACE TIME', timeLabel(r?.finishedAt)], ['AVG POWER', `${Math.round(r?.avgWatts || 0)} W`], ['HITS LANDED', String(r?.hits || 0)]].map(([label, value]) => `<div class="result-stat"><span>${label}</span><strong>${value}</strong></div>`).join('');
     $('results-list').innerHTML = state.riders.map(x => `<div class="result-row ${x.id === playerId ? 'you' : ''}"><span class="rank">${x.rank}</span><span>${esc(x.name)}${x.bot ? ' · AI' : ''}</span><span class="time">${timeLabel(x.finishedAt)}</span></div>`).join('');
     $('career-summary').textContent = r ? `LEVEL ${levelFor(profile.xp)} · ${profile.xp} XP · ${profile.totalKm.toFixed(1)} km in the garage${r.source === 'demo' ? ' · Demo ride (not physical exercise data)' : ''}` : 'Spectator view · Thanks for riding along.';
-    $('again-btn').textContent = mode === 'online' ? 'BACK TO LOBBY' : 'RIDE AGAIN ↗';
+    $('again-btn').textContent = mode === 'online' ? 'BACK TO LOBBY' : 'RACE AGAIN ▶';
     $('again-btn').disabled = mode === 'online' && room?.hostId !== playerId;
     show('results');
     audio.effect('finish');
 }
-async function goHome() { closeModal(); paused = false; race = null; latest = null; pending = []; if (network && room) {
-    try {
-        await network.leave();
-    }
-    catch { }
-    room = null;
-} show('home'); renderTracks(); }
+async function goHome() {
+    closeModal(); paused = false; race = null; latest = null; pending = [];
+    const previousNetwork = network, previousRoom = room;
+    network = null; room = null; mode = 'practice';
+    previousNetwork?.stop();
+    show('home'); renderTracks();
+    if (previousNetwork && previousRoom) await previousNetwork.leave().catch(() => {});
+}
 async function doReady() { if (!network || !room)
     return; try {
     const r = await network.request('/api/rooms/ready', { ready: true });
@@ -368,7 +407,7 @@ function openVoice() {
         return;
     }
     const native = !!window.BreakawayBridge;
-    modal('YOUR VOICE. YOUR LINE.', `<p>${native ? 'The Android app first uses the offline Vosk command recognizer. A microphone alone is not enough: a recognizer must also be available.' : 'Your browser supplies speech recognition. It may send audio to its speech provider; Breakaway does not receive or store that audio.'}</p>
+    modal('VOICE CONTROL', `<p>${native ? 'The Android app first uses the offline Vosk command recognizer. A microphone alone is not enough: a recognizer must also be available.' : 'Your browser supplies speech recognition. It may send audio to its speech provider; Breakaway does not receive or store that audio.'}</p>
     <div class="notice">Use short, separate commands: “left”, “right”, “hit”, “kick”, “block”, “boost”, “coast”. For a noisy room, enable the optional “rider” prefix.</div>
     <label class="checkbox"><input type="checkbox" id="voice-wake" ${settings.wakeWord ? 'checked' : ''}>Require “rider” before each command</label>
     <label class="checkbox" style="margin:14px 0"><input type="checkbox" id="voice-online" ${native ? '' : 'checked'}>I allow ${native ? 'the installed Android recognition provider' : 'my browser’s speech provider'} to process audio, potentially online, when needed.</label>
@@ -377,12 +416,12 @@ function openVoice() {
     $('voice-phone').onclick = () => { closeModal(); openPair(); };
 }
 function openSettings() {
-    modal('THE GARAGE.', `<div class="settings-grid">
+    modal('RIDER SETUP', `<div class="settings-grid">
     <label>RACE BALANCE<select id="setting-mode"><option value="arcade">Absolute watts / arcade</option><option value="equalized">Watts relative to personal baseline</option></select></label>
     <label>BASELINE POWER (W)<input id="setting-ftp" type="number" min="75" max="500" value="${Number(settings.ftp)}"></label>
     <label>AI RIVALS<select id="setting-difficulty"><option value="easy">Easy cruising</option><option value="normal">Street competition</option><option value="hard">Hard charging</option></select></label>
-    <label>RENDER QUALITY<select id="setting-quality"><option value="auto">Balanced · 1080px render</option><option value="low">Low power · 640px render</option><option value="high">High · 1440px render</option></select></label>
-    <label>YOUR JERSEY<select id="setting-jersey">${COLORS.map((c, i) => `<option value="${c}" ${i > 0 && levelFor(profile.xp) < i + 1 ? 'disabled' : ''}>${['Sunburst', 'Seafoam', 'Rose', 'Ultraviolet', 'Ember', 'Summit', 'Skyline', 'Orchid'][i]}${i > 0 ? ` · Level ${i + 1}` : ''}</option>`).join('')}</select></label>
+    <label>RENDER QUALITY<select id="setting-quality"><option value="auto">Classic pixel detail</option><option value="low">Low power pixel detail</option><option value="high">High pixel detail</option></select></label>
+    <label>YOUR JERSEY<select id="setting-jersey">${COLORS.map((c, i) => `<option value="${c}" ${i > 0 && levelFor(profile.xp) < i + 1 ? 'disabled' : ''}>${['Redline', 'Cobalt', 'Gold', 'Violet', 'Flame', 'Forest', 'Sky', 'Ivory'][i]}${i > 0 ? ` · Level ${i + 1}` : ''}</option>`).join('')}</select></label>
     <label>SOUND LEVEL<input id="setting-volume" type="range" min="0" max="0.35" step="0.01" value="${Number(settings.volume)}"></label>
     <label class="checkbox"><input id="setting-motion" type="checkbox" ${settings.reducedMotion ? 'checked' : ''}>Reduced camera effects</label><label class="checkbox"><input id="setting-fps" type="checkbox" ${settings.showFps ? 'checked' : ''}>Show FPS and network latency</label>
     <label class="wide">MULTIPLAYER SERVER (HTTPS)<input id="setting-server" type="url" placeholder="${nativeExample()}" value="${esc(baseUrl())}"></label>
@@ -477,7 +516,7 @@ function openCalibration() {
         toast('Check voice commands in the garage or lobby, not during a race.');
         return;
     }
-    modal('SIX WORDS. ONE CHECK.', `<p>Speak each command once at your normal riding volume. Keep fans and room noise as they will be during a ride. This check measures recognition; it does not promise a latency or accuracy level.</p><div id="calibration-word" class="calibration-word">LEFT</div><div id="calibration-progress" class="calibration-progress">0 / 6</div><pre id="calibration-results" class="status-box hidden"></pre>`, () => { voice.calibration = null; });
+    modal('EIGHT COMMANDS. ONE CHECK.', `<p>Speak each command once at your normal riding volume. Keep fans and room noise as they will be during a ride. This check measures recognition; it does not promise a latency or accuracy level.</p><div id="calibration-word" class="calibration-word">LEFT</div><div id="calibration-progress" class="calibration-progress">0 / 8</div><pre id="calibration-results" class="status-box hidden"></pre>`, () => { voice.calibration = null; });
     voice.beginCalibration();
 }
 voice.addEventListener('calibration', e => {
@@ -551,6 +590,7 @@ $('create-btn').onclick = () => enterOnline('create', { trackId: settings.track,
 $('join-form').onsubmit = e => { e.preventDefault(); enterOnline('join', { code: $('room-code').value.trim().toUpperCase() }); };
 $('watch-btn').onclick = () => enterOnline('join', { code: $('room-code').value.trim().toUpperCase(), spectator: true });
 $('voice-lobby').onclick = openVoice;
+$('voice-home').onclick = openVoice;
 $('ready-btn').onclick = doReady;
 $('start-btn').onclick = doStart;
 $('copy-room').onclick = () => copy(room?.code || '');
@@ -607,6 +647,9 @@ voice.addEventListener('status', e => {
     $('mic-led').classList.toggle('live', listening);
     $('mic-led').classList.toggle('error', ['unavailable', 'denied'].includes(s.state));
     $('voice-label').textContent = listening ? 'VOICE ON · TAP TO MUTE' : s.state === 'starting' || s.state === 'retrying' ? 'CONNECTING VOICE' : 'ENABLE VOICE';
+    $('voice-home').classList.toggle('live', listening);
+    $('voice-home-label').textContent = listening ? 'VOICE ON · SAY “START”' : s.state === 'starting' || s.state === 'retrying' ? 'CONNECTING MICROPHONE' : 'ENABLE VOICE CONTROL';
+    $('voice-lobby').textContent = listening ? 'VOICE ON · TAP TO MUTE' : 'ENABLE VOICE';
     $('companion-voice').textContent = listening ? 'MICROPHONE ON · TAP TO MUTE' : 'ENABLE MICROPHONE';
     audio.setDucked(voice.active);
     if (s.message)
@@ -629,6 +672,15 @@ document.addEventListener('keydown', e => {
         $('demo-watts').value = bike.demoWatts;
         $('demo-value').textContent = `${bike.demoWatts} W`;
         return;
+    }
+    if (screen === 'home' && ['ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+        const index = TRACKS.findIndex(t => t.id === settings.track);
+        settings.track = TRACKS[(index + (e.key === 'ArrowUp' ? -1 : 1) + TRACKS.length) % TRACKS.length].id;
+        persist(); renderTracks(); return;
+    }
+    if (screen === 'home' && e.key === 'Enter' && document.activeElement === document.body) {
+        e.preventDefault(); startPractice(); return;
     }
     const action = KEYMAP[e.key] || KEYMAP[e.key.toLowerCase()];
     if (action && (screen === 'hud' || companion)) {
@@ -686,11 +738,12 @@ function frame(now) {
             let steps = 0;
             while (accumulator >= 1 / 30 && steps++ < 6) {
                 const t = bike.read();
-                applyInput(race, playerId, { seq: seq++, actions: pending.splice(0, 6), telemetry: { watts: t.watts, cadence: t.cadence, resistance: t.resistance, source: t.source, stale: t.stale } }, now);
+                applyInput(race, playerId, { seq: seq++, actions: takeActions(now), telemetry: { watts: t.watts, cadence: t.cadence, resistance: t.resistance, source: t.source, stale: t.stale } }, now);
+                previousRaceView = latest;
                 stepRace(race, now);
+                latest = snapshot(race);
                 accumulator -= 1 / 30;
             }
-            latest = snapshot(race);
             if (race.phase === 'finished' && !savedResult)
                 finish(latest);
         }
@@ -699,8 +752,9 @@ function frame(now) {
             if (mode === 'online')
                 sendNetwork();
         }
-        const view = mode === 'online' ? buffer.sample(now) : latest;
+        const view = mode === 'online' ? buffer.sample(now) : paused ? latest : interpolateRace(previousRaceView, latest, accumulator * 30);
         if (view) {
+            processEvents(latest || view);
             renderer.render(view, playerId, now / 1000);
             if (now - lastHud > 90) {
                 lastHud = now;
@@ -725,9 +779,10 @@ window.breakawayStarted = true;
 $('boot').classList.add('hidden');
 renderTracks();
 show(companion ? 'companion' : 'home');
+if (companion) ensureNetwork().catch(e => { $('pair-status').textContent = e.message; });
 requestAnimationFrame(frame);
 // Read-only diagnostics hook: it never accepts game state or authorizes server actions.
-window.breakawayDiagnostics = () => { const r = latest?.riders.find(x => x.id === playerId); return { version: VERSION, screen, mode, room: room?.code, phase: latest?.phase, playerId, telemetry: bike.read(), fps: renderer.fps, rider: r ? { lane: r.lane, targetLane: r.targetLane, energy: r.energy, coast: r.coast, watts: r.watts, stale: r.stale } : null }; };
+window.breakawayDiagnostics = () => { const r = latest?.riders.find(x => x.id === playerId); return { version: VERSION, screen, mode, room: room?.code, phase: latest?.phase, playerId, telemetry: bike.read(), fps: renderer.fps, tick: latest?.tick, voice: { active: voice.active, backend: voice.backend }, rider: r ? { lane: r.lane, targetLane: r.targetLane, energy: r.energy, coast: r.coast, watts: r.watts, stale: r.stale, action: r.action, actionTimer: r.actionTimer, actionDuration: r.actionDuration, actionId: r.actionId, actionSide: r.actionSide, actionChain: r.actionChain, chain: r.chain, shield: r.shield, boost: r.boost, brake: r.brake, stun: r.stun, hits: r.hits } : null }; };
 if (window.BreakawayBridge) {
     $('power-source').value = 'peloton';
     bike.select('peloton');

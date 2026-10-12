@@ -1,13 +1,13 @@
 import { rng } from './protocol.mjs';
 /** Hand-authored art direction; all course geometry and decorations are generated locally. */
 export const TRACKS = Object.freeze([
-    { id: 'coast', name: 'Pacific Overdrive', subtitle: 'Salt air. Sharp elbows.', region: 'COASTAL HIGHWAY', length: 3200, seed: 7219, difficulty: 'Flow',
+    { id: 'coast', name: 'Pacific Coast', subtitle: 'Cliffs, palms & open highway.', region: 'COASTAL HIGHWAY', length: 3200, seed: 7219, difficulty: 'Level 01',
         sky: ['#202f66', '#eb937f', '#ffd79a'], road: ['#3b4257', '#41485e'], ground: ['#a7865e', '#b9956b'], verge: '#e3c4a0', accent: '#ffbb68', fog: '#f4bba2', hill: 0.8, curve: 0.8, scenery: 'palm', night: false },
-    { id: 'canyon', name: 'Redline Canyon', subtitle: 'Take the inside line.', region: 'DESERT SWITCHBACKS', length: 3600, seed: 4417, difficulty: 'Technical',
+    { id: 'canyon', name: 'Dry Creek', subtitle: 'Dust, heat & hairpin turns.', region: 'DESERT SWITCHBACKS', length: 3600, seed: 4417, difficulty: 'Level 02',
         sky: ['#381e52', '#dc775e', '#ffd38f'], road: ['#49414b', '#514854'], ground: ['#945147', '#aa6350'], verge: '#e6ab7d', accent: '#ff815e', fog: '#e49b75', hill: 1.5, curve: 1.5, scenery: 'cactus', night: false },
-    { id: 'metro', name: 'Neon Afterhours', subtitle: 'The city is your circuit.', region: 'MIDNIGHT EXPRESSWAY', length: 3000, seed: 8881, difficulty: 'Fast',
+    { id: 'metro', name: 'Metro Run', subtitle: 'Streetlights & fast straights.', region: 'MIDNIGHT EXPRESSWAY', length: 3000, seed: 8881, difficulty: 'Level 03',
         sky: ['#090d28', '#29214c', '#644079'], road: ['#262b45', '#2d324c'], ground: ['#18253b', '#1e2d43'], verge: '#8c5eff', accent: '#8cf5ed', fog: '#51436d', hill: 0.35, curve: 1.1, scenery: 'city', night: true },
-    { id: 'alpine', name: 'Summit Radio', subtitle: 'Thin air. Full send.', region: 'ALPINE PASS', length: 4000, seed: 2019, difficulty: 'Endurance',
+    { id: 'alpine', name: 'Sierra Pass', subtitle: 'Pines, peaks & blind crests.', region: 'ALPINE PASS', length: 4000, seed: 2019, difficulty: 'Level 04',
         sky: ['#263e69', '#94b6c5', '#e3dfc6'], road: ['#404a54', '#47515b'], ground: ['#4d7162', '#5b806e'], verge: '#d3dfcc', accent: '#c6f18c', fog: '#c8dbd0', hill: 2.0, curve: 1.0, scenery: 'pine', night: false }
 ]);
 export function getTrack(id) { return TRACKS.find(t => t.id === id) || TRACKS[0]; }

@@ -10,7 +10,7 @@ const sample = { watts: 200, cadence: 85, resistance: 40, source: 'peloton-v1' }
 const packet = (flags, power = 245) => { const v = new DataView(new ArrayBuffer(24)); v.setUint16(0, flags, true); v.setInt16(2, power, true); return v; };
 for (const [phrase, expected] of Object.entries(VOICE_ALIASES))
     test(`voice exact alias: ${phrase}`, () => assert.equal(parseVoice(phrase), expected));
-for (const phrase of ["don't go left", 'I left my phone', 'hit and then boost', 'left right', 'please attack this rider', 'nothing', '', 'stop talking', 'right now'])
+for (const phrase of ["don't go left", 'I left my phone', 'hit and then boost', 'left right', 'please attack this rider', 'nothing', '', 'stop talking', 'right now', 'constructor', '__proto__', 'toString'])
     test(`voice rejects conversation: ${phrase}`, () => assert.equal(parseVoice(phrase), null));
 test('voice punctuation and optional wake word', () => { assert.equal(parseVoice('Rider, LEFT!'), 'left'); assert.equal(parseVoice('left', { wakeWord: true }), null); assert.equal(parseVoice('rider right', { wakeWord: true }), 'right'); });
 test('voice confidence gate uses the actual result confidence', () => { const gate = new VoiceGate(); assert.equal(gate.accept({ text: 'hit', confidence: .2, utteranceId: 'a' }, 0), null); assert.equal(gate.accept({ text: 'hit', confidence: .8, utteranceId: 'b' }, 0), 'hit'); });
