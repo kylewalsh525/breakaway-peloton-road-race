@@ -213,5 +213,5 @@ finally {
         limitations: ['No actual microphone input, Bluetooth device, or physical Peloton was used.', 'Native bridge events were synthetic.', 'The complete-race check used an accelerated animation clock.', 'HTTP/SSE multiplayer transport is covered by separate server integration tests.']
     };
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
-    console.log(`Saved ${checks.length} checks to ${reportPath}`);
+    console.log(`Saved ${checks.length} checks to artifacts/retro-browser-test.json`);
 }

@@ -206,5 +206,5 @@ finally {
     await mkdir(resolve(ROOT, 'artifacts'), { recursive: true });
     const path = resolve(ROOT, 'artifacts/combat-network-test.json');
     await writeFile(path, JSON.stringify(report, null, 2) + '\n');
-    console.log(`Report: ${path}`);
+    console.log('Report: artifacts/combat-network-test.json');
 }

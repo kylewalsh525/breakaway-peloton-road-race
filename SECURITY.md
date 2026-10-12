@@ -27,3 +27,10 @@ Local career records are stored on the device. The server stores recent summary 
 Browser and server runtime code use no third-party npm packages. Android builds download pinned Maven dependencies and an offline Vosk model; Python's helper verifies the Gradle distribution checksum and locks the model digest after the initial HTTPS download. Review and retain that lock. No independently verified model checksum is invented or assumed.
 
 Do not commit `.env`, signing keys, Android `local.properties`, access codes or result journals. Keep a stable private signing key for updates. Review dependency advisories and pin trusted workflow/image digests before a commercial release. The supplied automated checks, simple credential-pattern scan and test coverage are not a penetration test, software-composition audit or security certification.
+
+
+## Public repository hygiene
+
+Only `.env.example` belongs in version control; keep its access-code value empty and use example domains. Git and Docker ignore real environment files, common credential files, signing material and local device metadata. Ignore rules do not remove files that are already tracked.
+
+`npm run check:public` checks working files and staged Git content for private filenames and common credential patterns, without printing matched values. It runs during `npm run verify`. CI also runs `npm run check:public -- --history` against all fetched history. These checks are a guard against common accidental disclosures, not proof that every possible secret can be identified. Review staged changes before pushing. If a real credential is ever published, revoke or rotate it first; deleting its current file does not remove it from earlier commits.

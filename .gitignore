@@ -15,3 +15,22 @@ android/app/src/main/assets/model/
 __pycache__/
 
 .build-cache/
+
+# Local machine metadata and credential material.
+.DS_Store
+Thumbs.db
+.envrc
+.aws/
+.ssh/
+.kube/
+.netrc
+.npmrc
+.pypirc
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+application_default_credentials.json
+service-account*.json
+service_account*.json

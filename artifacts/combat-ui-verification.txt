@@ -54,4 +54,4 @@ PASS: Complete accelerated solo race reaches eight-rider results
 PASS: Results award career XP
 PASS: Race again starts another race
 PASS: No uncaught JavaScript errors
-Saved 55 checks to /Users/kylewalsh/github-local/breakaway-peloton-road-race/artifacts/retro-browser-test.json
+Saved 55 checks to artifacts/retro-browser-test.json

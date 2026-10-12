@@ -2,7 +2,7 @@
 
 Unzip into a new folder. The project is self-contained and has no connection to any other repository. A new **private** repository is a reasonable starting point for an unverified hardware pilot.
 
-Create an empty GitHub repository, for example `kylewalsh525/peloton-road-race`, without adding a separate README/license/gitignore. From the unzipped project folder:
+Create an empty GitHub repository without adding a separate README/license/gitignore. Replace `YOUR-ACCOUNT` and `YOUR-REPOSITORY` below with your GitHub account or organization and repository name. From the unzipped project folder:
 
 ```sh
 git init -b main
@@ -10,7 +10,7 @@ git add .
 git status --short
 # Review staged filenames before committing. Never stage .env or a signing key.
 git commit -m "Initial Breakaway arcade racer implementation"
-git remote add origin https://github.com/kylewalsh525/peloton-road-race.git
+git remote add origin https://github.com/YOUR-ACCOUNT/YOUR-REPOSITORY.git
 git push -u origin main
 ```
 

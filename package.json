@@ -16,11 +16,12 @@
     "test:load": "node scripts/load-test.mjs",
     "check": "node scripts/check.mjs",
     "build": "node scripts/build.mjs",
-    "verify": "npm run check && npm test && npm run build",
+    "verify": "npm run check:public && npm run check && npm test && npm run build",
     "test:ui": "node scripts/retro-browser-test.mjs",
     "test:multiplayer-ui": "node scripts/multiplayer_browser_test.mjs",
     "test:combat-render": "node scripts/combat-render-test.mjs",
     "test:combat-voice": "node scripts/combat-voice-browser-test.mjs",
-    "test:combat-network": "node scripts/combat-network-test.mjs"
+    "test:combat-network": "node scripts/combat-network-test.mjs",
+    "check:public": "node scripts/check-public-repo.mjs"
   }
 }

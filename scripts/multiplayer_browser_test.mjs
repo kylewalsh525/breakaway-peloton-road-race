@@ -221,5 +221,5 @@ finally {
     };
     await mkdir(resolve(ROOT, 'artifacts'), { recursive: true });
     await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
-    console.log(`Report: ${reportPath}`);
+    console.log('Report: artifacts/multiplayer-browser-test.json');
 }
